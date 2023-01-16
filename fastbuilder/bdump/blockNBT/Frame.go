@@ -84,52 +84,20 @@ func placeFrame(
 		return nil
 	}
 	// if their is nothing in the frame block, then return
-	_, err = cmdsender.SendWSCommandWithResponce("replaceitem entity @s slot.hotbar 0 air")
-	if err != nil {
-		return fmt.Errorf("placeFrame: %v", err)
-	}
-	Environment.Connection.(*minecraft.Conn).WritePacket(&packet.MobEquipment{
-		EntityRuntimeID: Environment.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
-		NewItem: protocol.ItemInstance{
-			StackNetworkID: 0,
-			Stack: protocol.ItemStack{
-				ItemType: protocol.ItemType{
-					NetworkID:     0,
-					MetadataValue: 0,
-				},
-				BlockRuntimeID: 0,
-				Count:          0,
-				NBTData:        map[string]interface{}{},
-				CanBePlacedOn:  []string(nil),
-				CanBreak:       []string(nil),
-				HasNetworkID:   false,
-			},
-		},
-		InventorySlot: 0,
-		HotBarSlot:    0,
-		WindowID:      0,
+	err = blockNBT_depends.ReplaceitemAndEnchant(Environment, &types.ChestSlot{
+		Name:        FrameData.Item[0].Name,
+		Count:       FrameData.Item[0].Count,
+		Damage:      FrameData.Item[0].Damage,
+		ItemLock:    FrameData.Item[0].ItemLock,
+		KeepOnDeath: FrameData.Item[0].KeepOnDeath,
+		CanPlaceOn:  FrameData.Item[0].CanPlaceOn,
+		CanDestroy:  FrameData.Item[0].CanDestroy,
+		EnchList:    FrameData.Item[0].EnchList,
 	})
-	// change the slot.weapon.mainhand into slot.hotbar 0
-	_, err = cmdsender.SendWSCommandWithResponce(fmt.Sprintf("replaceitem entity @s slot.weapon.mainhand 0 %v 1 %v %v", FrameData.Item[0].Name, FrameData.Item[0].Damage, commands_generator.GetReplaceItemEnhancement(
-		&types.Module{
-			ChestData: &types.ChestData{
-				types.ChestSlot{
-					ItemLock:    FrameData.Item[0].ItemLock,
-					KeepOnDeath: FrameData.Item[0].KeepOnDeath,
-					CanPlaceOn:  FrameData.Item[0].CanPlaceOn,
-					CanDestroy:  FrameData.Item[0].CanDestroy,
-				},
-			},
-		}, 0)))
 	if err != nil {
 		return fmt.Errorf("placeFrame: %v", err)
 	}
-	// replaceitem
-	err = blockNBT_depends.EnchantRequest(Environment, FrameData.Item[0].EnchList)
-	if err != nil {
-		return fmt.Errorf("placeFrame: %v", err)
-	}
-	// enchant item stack
+	// replaceitem and enchant item stack
 	blockStates, err := blockNBT_depends.ParseStringBlockStates(&BlockInfo.Block.BlockStates)
 	if err != nil {
 		return fmt.Errorf("placeFrame: %v", err)
@@ -187,54 +155,6 @@ func placeFrame(
 			}
 			blockRuntimeID = blockRuntimeID + uint32(facing_direction)
 			// get run time id of frame block
-			if FrameData.Item[0].EnchList != nil {
-				Environment.Connection.(*minecraft.Conn).WritePacket(&packet.MobEquipment{
-					EntityRuntimeID: Environment.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
-					NewItem: protocol.ItemInstance{
-						StackNetworkID: 0,
-						Stack: protocol.ItemStack{
-							ItemType: protocol.ItemType{
-								NetworkID:     int32(networkID),
-								MetadataValue: uint32(FrameData.Item[0].Damage),
-							},
-							BlockRuntimeID: 0,
-							Count:          1,
-							NBTData: map[string]interface{}{
-								"ench": FrameData.Item[0].EnchList,
-							},
-							CanBePlacedOn: FrameData.Item[0].CanPlaceOn,
-							CanBreak:      FrameData.Item[0].CanDestroy,
-							HasNetworkID:  false,
-						},
-					},
-					InventorySlot: 0,
-					HotBarSlot:    0,
-					WindowID:      0,
-				})
-			} else {
-				Environment.Connection.(*minecraft.Conn).WritePacket(&packet.MobEquipment{
-					EntityRuntimeID: Environment.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
-					NewItem: protocol.ItemInstance{
-						StackNetworkID: 0,
-						Stack: protocol.ItemStack{
-							ItemType: protocol.ItemType{
-								NetworkID:     int32(networkID),
-								MetadataValue: uint32(FrameData.Item[0].Damage),
-							},
-							BlockRuntimeID: 0,
-							Count:          1,
-							CanBePlacedOn:  FrameData.Item[0].CanPlaceOn,
-							CanBreak:       FrameData.Item[0].CanDestroy,
-							HasNetworkID:   false,
-						},
-					},
-					InventorySlot: 0,
-					HotBarSlot:    0,
-					WindowID:      0,
-				})
-			}
-			// let other players know what happened
-			// it is not necessary to do
 			for i := 0; i < clickNum; i++ {
 				Environment.Connection.(*minecraft.Conn).WritePacket(&packet.InventoryTransaction{
 					LegacyRequestID:    0,

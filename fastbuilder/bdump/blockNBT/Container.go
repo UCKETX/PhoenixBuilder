@@ -290,11 +290,11 @@ func getContainerDataRun(blockNBT map[string]interface{}, blockName string) (typ
 }
 
 func placeContainer(
-	environment *environment.PBEnvironment,
+	Environment *environment.PBEnvironment,
 	Mainsettings *types.MainConfig,
 	BlockInfo *types.Module,
 ) error {
-	cmdsender := environment.CommandSender.(*commands.CommandSender)
+	cmdsender := Environment.CommandSender.(*commands.CommandSender)
 	// prepare
 	if BlockInfo.Block != nil {
 		request := commands_generator.SetBlockRequest(BlockInfo, Mainsettings)
@@ -305,12 +305,44 @@ func placeContainer(
 	}
 	// place block
 	got := commands_generator.ReplaceItemRequest(BlockInfo, Mainsettings)
-	for _, value := range got {
-		err := cmdsender.SendDimensionalCommand(value)
-		if err != nil {
-			return fmt.Errorf("placeContainer: %v", err)
+	// get replaceitem command
+	if BlockInfo.ChestSlot != nil {
+		if len(got) > 0 {
+			err := cmdsender.SendDimensionalCommand(got[0])
+			if err != nil {
+				return fmt.Errorf("placeContainer: %v", err)
+			}
+		}
+		return nil
+	}
+	// for old method
+	if BlockInfo.ChestData != nil {
+		for _, value := range got {
+			// chestData := *BlockInfo.ChestData
+			err := cmdsender.SendDimensionalCommand(value)
+			if err != nil {
+				return fmt.Errorf("placeContainer: %v", err)
+			}
+			/*
+				if len(chestData[key].EnchList) <= 0 {
+					err := cmdsender.SendDimensionalCommand(value)
+					if err != nil {
+						return fmt.Errorf("placeContainer: %v", err)
+					}
+				} else {
+					err := blockNBT_depends.ReplaceitemAndEnchant(Environment, &chestData[key])
+					if err != nil {
+						return fmt.Errorf("placeContainer: %v", err)
+					}
+					err = blockNBT_depends.PutItemIntoContainer(Environment, &chestData[key])
+					if err != nil {
+						return fmt.Errorf("placeContainer: %v", err)
+					}
+				}
+				^ WIP
+			*/
 		}
 	}
-	// replaceitem
+	// for new method
 	return nil
 }

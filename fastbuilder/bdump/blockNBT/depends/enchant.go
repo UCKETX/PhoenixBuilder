@@ -2,8 +2,13 @@ package blockNBT_depends
 
 import (
 	"fmt"
+	"phoenixbuilder/fastbuilder/commands_generator"
 	"phoenixbuilder/fastbuilder/environment"
+	"phoenixbuilder/fastbuilder/types"
 	"phoenixbuilder/io/commands"
+	"phoenixbuilder/minecraft"
+	"phoenixbuilder/minecraft/protocol"
+	"phoenixbuilder/minecraft/protocol/packet"
 )
 
 type EnchList []EnchSingle
@@ -66,5 +71,111 @@ func EnchantRequest(Environment *environment.PBEnvironment, input []interface{})
 	if err != nil {
 		return fmt.Errorf("EnchantRequest: %v", err)
 	}
+	return nil
+}
+
+func ReplaceitemAndEnchant(
+	Environment *environment.PBEnvironment,
+	ItemInfo *types.ChestSlot,
+) error {
+	cmdsender := Environment.CommandSender.(*commands.CommandSender)
+	_, err := cmdsender.SendWSCommandWithResponce("replaceitem entity @s slot.hotbar 0 air")
+	if err != nil {
+		return fmt.Errorf("ReplaceitemAndEnchant: %v", err)
+	}
+	Environment.Connection.(*minecraft.Conn).WritePacket(&packet.MobEquipment{
+		EntityRuntimeID: Environment.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
+		NewItem: protocol.ItemInstance{
+			StackNetworkID: 0,
+			Stack: protocol.ItemStack{
+				ItemType: protocol.ItemType{
+					NetworkID:     0,
+					MetadataValue: 0,
+				},
+				BlockRuntimeID: 0,
+				Count:          0,
+				NBTData:        map[string]interface{}{},
+				CanBePlacedOn:  []string(nil),
+				CanBreak:       []string(nil),
+				HasNetworkID:   false,
+			},
+		},
+		InventorySlot: 0,
+		HotBarSlot:    0,
+		WindowID:      0,
+	})
+	// change the slot.weapon.mainhand into slot.hotbar 0
+	_, err = cmdsender.SendWSCommandWithResponce(fmt.Sprintf("replaceitem entity @s slot.weapon.mainhand 0 %v %v %v %v", ItemInfo.Name, ItemInfo.Count, ItemInfo.Damage, commands_generator.GetReplaceItemEnhancement(
+		&types.Module{
+			ChestData: &types.ChestData{
+				types.ChestSlot{
+					ItemLock:    ItemInfo.ItemLock,
+					KeepOnDeath: ItemInfo.KeepOnDeath,
+					CanPlaceOn:  ItemInfo.CanPlaceOn,
+					CanDestroy:  ItemInfo.CanDestroy,
+				},
+			},
+		}, 0)))
+	if err != nil {
+		return fmt.Errorf("ReplaceitemAndEnchant: %v", err)
+	}
+	// replaceitem
+	err = EnchantRequest(Environment, ItemInfo.EnchList)
+	if err != nil {
+		return fmt.Errorf("ReplaceitemAndEnchant: %v", err)
+	}
+	// enchant item stack
+	if protocol.CurrentProtocol == 504 {
+		stackNetworkID, ok := ItemRunTimeID[ItemInfo.Name]
+		if ok {
+			if ItemInfo.EnchList != nil {
+				Environment.Connection.(*minecraft.Conn).WritePacket(&packet.MobEquipment{
+					EntityRuntimeID: Environment.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
+					NewItem: protocol.ItemInstance{
+						StackNetworkID: 0,
+						Stack: protocol.ItemStack{
+							ItemType: protocol.ItemType{
+								NetworkID:     int32(stackNetworkID),
+								MetadataValue: uint32(ItemInfo.Damage),
+							},
+							BlockRuntimeID: 0,
+							Count:          1,
+							NBTData: map[string]interface{}{
+								"ench": ItemInfo.EnchList,
+							},
+							CanBePlacedOn: ItemInfo.CanPlaceOn,
+							CanBreak:      ItemInfo.CanDestroy,
+							HasNetworkID:  false,
+						},
+					},
+					InventorySlot: 0,
+					HotBarSlot:    0,
+					WindowID:      0,
+				})
+			} else {
+				Environment.Connection.(*minecraft.Conn).WritePacket(&packet.MobEquipment{
+					EntityRuntimeID: Environment.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
+					NewItem: protocol.ItemInstance{
+						StackNetworkID: 0,
+						Stack: protocol.ItemStack{
+							ItemType: protocol.ItemType{
+								NetworkID:     int32(stackNetworkID),
+								MetadataValue: uint32(ItemInfo.Damage),
+							},
+							BlockRuntimeID: 0,
+							Count:          1,
+							CanBePlacedOn:  ItemInfo.CanPlaceOn,
+							CanBreak:       ItemInfo.CanDestroy,
+							HasNetworkID:   false,
+						},
+					},
+					InventorySlot: 0,
+					HotBarSlot:    0,
+					WindowID:      0,
+				})
+			}
+		}
+	}
+	// let other players know what happened
 	return nil
 }
