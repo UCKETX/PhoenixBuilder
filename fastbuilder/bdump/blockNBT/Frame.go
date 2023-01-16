@@ -120,7 +120,7 @@ func placeFrame(
 		return fmt.Errorf("placeFrame: %v", err)
 	}
 	// teleport
-	if protocol.CurrentProtocol == 504 {
+	if blockNBT_depends.CheckVersion() {
 		networkID, ok := blockNBT_depends.ItemRunTimeID[FrameData.Item[0].Name]
 		if ok {
 			var clickNum int = 1

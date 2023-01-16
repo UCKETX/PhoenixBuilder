@@ -125,7 +125,7 @@ func ReplaceitemAndEnchant(
 		return fmt.Errorf("ReplaceitemAndEnchant: %v", err)
 	}
 	// enchant item stack
-	if protocol.CurrentProtocol == 504 {
+	if CheckVersion() {
 		stackNetworkID, ok := ItemRunTimeID[ItemInfo.Name]
 		if ok {
 			if ItemInfo.EnchList != nil {

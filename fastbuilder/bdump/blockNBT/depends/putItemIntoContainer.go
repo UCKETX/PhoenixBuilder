@@ -15,7 +15,7 @@ func OpenContainer(
 	ItemInfo *types.ChestSlot,
 	ContainerPos [3]int32,
 ) error {
-	if protocol.CurrentProtocol == 504 {
+	if CheckVersion() {
 		networkID, ok := ItemRunTimeID[ItemInfo.Name]
 		if ok {
 			Environment.Connection.(*minecraft.Conn).WritePacket(&packet.InventoryTransaction{
@@ -60,7 +60,7 @@ func PutItemIntoContainer(
 	Environment *environment.PBEnvironment,
 	ItemInfo *types.ChestSlot,
 ) error {
-	if protocol.CurrentProtocol == 504 {
+	if CheckVersion() {
 		stackNetworkID, ok := ItemRunTimeID[ItemInfo.Name]
 		if ok {
 			PlaceStackRequestAction := protocol.PlaceStackRequestAction{}
