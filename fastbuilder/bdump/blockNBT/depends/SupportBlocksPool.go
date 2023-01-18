@@ -1,4 +1,4 @@
-package blockNBT
+package blockNBT_depends
 
 // 此表用于记录现阶段支持了的方块实体
 var index = map[string]string{
@@ -73,7 +73,7 @@ var index = map[string]string{
 }
 
 // 检查这个方块实体是否已被支持
-func checkIfIsEffectiveNBTBlock(blockName string) string {
+func CheckIfIsEffectiveNBTBlock(blockName string) string {
 	value, ok := index[blockName]
 	if ok {
 		return value

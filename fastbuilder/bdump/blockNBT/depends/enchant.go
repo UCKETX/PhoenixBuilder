@@ -126,7 +126,7 @@ func ReplaceitemAndEnchant(
 	}
 	// enchant item stack
 	if CheckVersion() {
-		stackNetworkID, ok := ItemRunTimeID[ItemInfo.Name]
+		networkID, ok := ItemRunTimeID[ItemInfo.Name]
 		if ok {
 			if ItemInfo.EnchList != nil {
 				Environment.Connection.(*minecraft.Conn).WritePacket(&packet.MobEquipment{
@@ -135,7 +135,7 @@ func ReplaceitemAndEnchant(
 						StackNetworkID: 0,
 						Stack: protocol.ItemStack{
 							ItemType: protocol.ItemType{
-								NetworkID:     int32(stackNetworkID),
+								NetworkID:     int32(networkID),
 								MetadataValue: uint32(ItemInfo.Damage),
 							},
 							BlockRuntimeID: 0,
@@ -159,7 +159,7 @@ func ReplaceitemAndEnchant(
 						StackNetworkID: 0,
 						Stack: protocol.ItemStack{
 							ItemType: protocol.ItemType{
-								NetworkID:     int32(stackNetworkID),
+								NetworkID:     int32(networkID),
 								MetadataValue: uint32(ItemInfo.Damage),
 							},
 							BlockRuntimeID: 0,

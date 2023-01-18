@@ -2,6 +2,7 @@ package blockNBT
 
 import (
 	"fmt"
+	blockNBT_depends "phoenixbuilder/fastbuilder/bdump/blockNBT/depends"
 	"phoenixbuilder/fastbuilder/commands_generator"
 	"phoenixbuilder/fastbuilder/environment"
 	"phoenixbuilder/fastbuilder/types"
@@ -317,30 +318,27 @@ func placeContainer(
 	}
 	// for old method
 	if BlockInfo.ChestData != nil {
-		for _, value := range got {
-			// chestData := *BlockInfo.ChestData
-			err := cmdsender.SendDimensionalCommand(value)
+		enchItemList := blockNBT_depends.EnchItemList{}
+		for key, value := range got {
+			chestData := *BlockInfo.ChestData
+			_, ok := blockNBT_depends.ContainerIdIndexMap[*BlockInfo.Block.Name]
+			if len(chestData[key].EnchList) <= 0 || !ok || !blockNBT_depends.CheckVersion() {
+				err := cmdsender.SendDimensionalCommand(value)
+				if err != nil {
+					return fmt.Errorf("placeContainer: %v", err)
+				}
+			} else {
+				enchItemList = append(enchItemList, blockNBT_depends.EnchItem{
+					WantPutItem:   chestData[key],
+					ContainerInfo: BlockInfo,
+				})
+			}
+		}
+		if len(enchItemList) > 0 {
+			err := blockNBT_depends.PutItemIntoContainerRun(Environment, enchItemList)
 			if err != nil {
 				return fmt.Errorf("placeContainer: %v", err)
 			}
-			/*
-				if len(chestData[key].EnchList) <= 0 {
-					err := cmdsender.SendDimensionalCommand(value)
-					if err != nil {
-						return fmt.Errorf("placeContainer: %v", err)
-					}
-				} else {
-					err := blockNBT_depends.ReplaceitemAndEnchant(Environment, &chestData[key])
-					if err != nil {
-						return fmt.Errorf("placeContainer: %v", err)
-					}
-					err = blockNBT_depends.PutItemIntoContainer(Environment, &chestData[key])
-					if err != nil {
-						return fmt.Errorf("placeContainer: %v", err)
-					}
-				}
-				^ WIP
-			*/
 		}
 	}
 	// for new method

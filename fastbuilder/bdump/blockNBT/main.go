@@ -116,7 +116,7 @@ func PlaceBlockWithNBTDataRun(
 	} else {
 		BlockNBT = InterfaceNBT
 	}
-	TYPE := checkIfIsEffectiveNBTBlock(*BlockInfo.Block.Name)
+	TYPE := blockNBT_depends.CheckIfIsEffectiveNBTBlock(*BlockInfo.Block.Name)
 	_, err := placeBlockWithNBTData(&input{
 		Environment:        Environment,
 		Mainsettings:       Mainsettings,

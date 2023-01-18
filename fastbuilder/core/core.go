@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"phoenixbuilder/fastbuilder/args"
+	blockNBT_depends "phoenixbuilder/fastbuilder/bdump/blockNBT/depends"
 	"phoenixbuilder/fastbuilder/configuration"
 	fbauth "phoenixbuilder/fastbuilder/cv4/auth"
 	"phoenixbuilder/fastbuilder/environment"
@@ -346,9 +347,7 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 
 		if env.OmegaAdaptorHolder != nil {
 			env.OmegaAdaptorHolder.(*embed.EmbeddedAdaptor).FeedPacketAndByte(pk, data)
-			// continue
-			// 我不清楚注释掉这行会发生什么，但不这么做会导致其他一些功能收不到包，例如 lexport 卡死
-			// ——Happy2018new
+			continue
 		}
 		env.UQHolder.(*uqHolder.UQHolder).Update(pk)
 		hostBridgeGamma.HostPumpMcPacket(pk)
@@ -499,6 +498,12 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 				move.Target = p.Position
 				move.TargetRuntimeID = p.EntityRuntimeID
 				//fmt.Printf("Got target: %s\n",p.Username)
+			}
+		case *packet.ContainerOpen:
+			blockNBT_depends.ContainerOpenData = *p
+		case *packet.InventoryContent:
+			if p.Content[0].StackNetworkID != 0 && p.WindowID == 0 {
+				blockNBT_depends.Container_Hotbar_0_StackNetworkID = p.Content[0].StackNetworkID
 			}
 		}
 	}
