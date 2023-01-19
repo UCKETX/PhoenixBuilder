@@ -369,7 +369,7 @@ func putItemIntoContainer(
 /*
 将 EnchItemList 列表中的物品放入物品，主要是为了支持附魔性物品
 
-需要占用槽位 slot.hotbar 0
+需要占用槽位 slot.hotbar 0 和 slot.hotbar 1
 
 支持的容器请见当前文件夹下 container.go 中的 ContainerIdIndexMap
 */
