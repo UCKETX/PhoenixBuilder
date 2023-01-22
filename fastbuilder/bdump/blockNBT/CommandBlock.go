@@ -2,6 +2,7 @@ package blockNBT
 
 import (
 	"fmt"
+	blockNBT_depends "phoenixbuilder/fastbuilder/bdump/blockNBT/depends"
 	"phoenixbuilder/fastbuilder/commands_generator"
 	environment "phoenixbuilder/fastbuilder/environment"
 	"phoenixbuilder/fastbuilder/types"
@@ -182,6 +183,9 @@ func placeCommandBlock(
 			}
 		}
 		Cbdata := BlockInfo.CommandBlockData
+		if Mainsettings.UpgradeExecuteCommand {
+			Cbdata.Command = blockNBT_depends.GetNewVersionOfExecuteCommand(Cbdata.Command, [3]int{BlockInfo.Point.X, BlockInfo.Point.Y, BlockInfo.Point.Z})
+		}
 		if Mainsettings.InvalidateCommands {
 			Cbdata.Command = "|" + Cbdata.Command
 		}
