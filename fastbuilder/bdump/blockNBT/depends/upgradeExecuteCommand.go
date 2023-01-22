@@ -281,6 +281,7 @@ func (cmd *command) getPos() (string, error) {
 			"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
 			"O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
 			"?",
+			"/",
 		})
 		cmd.pointer--
 		if err != nil {
