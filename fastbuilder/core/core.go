@@ -363,6 +363,9 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 			env.ExternalConnectionHandler.(*external.ExternalConnectionHandler).PacketChannel <- data
 		}
 		// fmt.Println(omega_utils.PktIDInvMapping[int(pk.ID())])
+		if blockNBT_depends.Islistening {
+			blockNBT_depends.ReceivePacket = append(blockNBT_depends.ReceivePacket, pk)
+		}
 		switch p := pk.(type) {
 		// case *packet.AdventureSettings:
 		// 	if conn.GameData().EntityUniqueID == p.PlayerUniqueID {
@@ -498,12 +501,6 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 				move.Target = p.Position
 				move.TargetRuntimeID = p.EntityRuntimeID
 				//fmt.Printf("Got target: %s\n",p.Username)
-			}
-		case *packet.ContainerOpen:
-			blockNBT_depends.ContainerOpenData = *p
-		case *packet.InventoryContent:
-			if p.Content[0].StackNetworkID != 0 && p.WindowID == 0 {
-				blockNBT_depends.Container_Hotbar_0_StackNetworkID = p.Content[0].StackNetworkID
 			}
 		}
 	}

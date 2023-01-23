@@ -283,7 +283,7 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 			}
 			blkscounter++
 			if curblock.StringNBT != nil {
-				err := blockNBT.PlaceBlockWithNBTDataRun(env, cfg, isFastMode, curblock, nil)
+				err := blockNBT.PlaceBlockWithNBTDataRun(env, cfg, isFastMode, curblock)
 				if err != nil {
 					pterm.Warning.Printf("%v\n", err)
 				}

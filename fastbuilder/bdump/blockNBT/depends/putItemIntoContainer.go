@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-var ContainerOpenData interface{}
-var Container_Hotbar_0_StackNetworkID int32
+var containerOpenData interface{}
+var container_Hotbar_0_StackNetworkID int32
 
 type EnchItem struct {
 	WantPutItem   types.ChestSlot
@@ -264,13 +264,16 @@ func openContainer(
 	ContainerBlockStates *string,
 	ContainerPos [3]int32,
 ) error {
-	ContainerOpenData = nil
+	containerOpenData = nil
+	InitProcessor()
+	// prepare
 	got, err := containerBlockStatesToBlockData(*ContainerBlockName, *ContainerBlockStates)
 	if err != nil {
 		return fmt.Errorf("openContainer: %v", err)
 	}
 	blockRuntimeID, ok1 := ContainerDataToBlockRunTimeId[SingleContainer{*ContainerBlockName, got}]
 	networkID, ok2 := ItemRunTimeID[MainHandItemInfo.Name]
+	// get blockRunTimeId and networkId
 	if ok1 && ok2 {
 		Environment.Connection.(*minecraft.Conn).WritePacket(&packet.InventoryTransaction{
 			LegacyRequestID:    0,
@@ -291,7 +294,7 @@ func openContainer(
 							MetadataValue: uint32(MainHandItemInfo.Damage),
 						},
 						BlockRuntimeID: 0,
-						Count:          1,
+						Count:          uint16(MainHandItemInfo.Count),
 						CanBePlacedOn:  MainHandItemInfo.CanPlaceOn,
 						CanBreak:       MainHandItemInfo.CanDestroy,
 						HasNetworkID:   false,
@@ -301,6 +304,9 @@ func openContainer(
 			},
 		})
 	}
+	// open container
+	containerOpenData = PacketProcessor(Environment, true, packet.IDContainerOpen)[0].(*packet.ContainerOpen)
+	// process packet
 	return nil
 }
 
@@ -317,14 +323,21 @@ func closeContainer(
 func requestStackNetworkID(
 	Environment *environment.PBEnvironment,
 ) error {
-	Container_Hotbar_0_StackNetworkID = 0
+	container_Hotbar_0_StackNetworkID = 0
+	InitProcessor()
+	// prepare
 	cmdsender := Environment.CommandSender.(*commands.CommandSender)
 	_, err := cmdsender.SendWSCommandWithResponce("replaceitem entity @s slot.hotbar 1 air")
 	if err != nil {
 		return fmt.Errorf("requestStackNetworkID: %v", err)
 	}
-	if Container_Hotbar_0_StackNetworkID == 0 {
-		return fmt.Errorf("requestStackNetworkID: Failed to get the StackNetworkID")
+	got := PacketProcessor(Environment, false, packet.IDInventoryContent)
+	for _, value := range got {
+		i := value.(*packet.InventoryContent)
+		if i.WindowID == 0 {
+			container_Hotbar_0_StackNetworkID = i.Content[0].StackNetworkID
+			break
+		}
 	}
 	return nil
 }
@@ -343,9 +356,8 @@ func putItemIntoContainer(
 	PlaceStackRequestAction.Source = protocol.StackRequestSlotInfo{
 		ContainerID:    ContainerCombinedHotBarAndInventory,
 		Slot:           0,
-		StackNetworkID: Container_Hotbar_0_StackNetworkID,
+		StackNetworkID: container_Hotbar_0_StackNetworkID,
 	}
-	Container_Hotbar_0_StackNetworkID = 0
 	PlaceStackRequestAction.Destination = protocol.StackRequestSlotInfo{
 		ContainerID:    ContainerID,
 		Slot:           ItemInfo.Slot,
@@ -377,7 +389,7 @@ func PutItemIntoContainerRun(
 	Environment *environment.PBEnvironment,
 	Input EnchItemList,
 ) error {
-	var containerOpenData packet.ContainerOpen
+	var cod packet.ContainerOpen
 	err := ReplaceitemAndEnchant(Environment, &Input[0].WantPutItem)
 	if err != nil {
 		return fmt.Errorf("PutItemIntoContainerRun: %v", err)
@@ -391,8 +403,8 @@ func PutItemIntoContainerRun(
 		if failedCount > 100 {
 			return fmt.Errorf("PutItemIntoContainerRun: Failed to open the container, please check the target area is loaded")
 		}
-		if ContainerOpenData != nil {
-			containerOpenData = ContainerOpenData.(packet.ContainerOpen)
+		if containerOpenData != nil {
+			cod = *containerOpenData.(*packet.ContainerOpen)
 			break
 		}
 		failedCount++
@@ -411,7 +423,6 @@ func PutItemIntoContainerRun(
 			return fmt.Errorf("PutItemIntoContainerRun: %v", err)
 		}
 	}
-	closeContainer(Environment, containerOpenData.WindowID)
-	ContainerOpenData = nil
+	closeContainer(Environment, cod.WindowID)
 	return nil
 }

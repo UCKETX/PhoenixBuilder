@@ -7,6 +7,7 @@ import (
 	"phoenixbuilder/fastbuilder/environment"
 	"phoenixbuilder/fastbuilder/types"
 	"phoenixbuilder/io/commands"
+	"sync"
 )
 
 // 此结构体用于本文件中 PlaceBlockWithNBTData 函数的输入部分
@@ -87,37 +88,29 @@ func placeBlockWithNBTData(input *input) (interface{}, error) {
 	return nil, nil
 }
 
-/*
-此函数是 package blockNBT 的主函数
+var apiIsUsing sync.Mutex
 
-如果调用此函数的是 FastBuilder ，则 InterfaceNBT 字段应该为 nil
-
-反之，如果调用此函数的是 Omega ，则直接传入 InterfaceNBT ，且 *BlockInfo.StringNBT 字段为 ""
-*/
+// 此函数是 package blockNBT 的主函数
 func PlaceBlockWithNBTDataRun(
 	Environment *environment.PBEnvironment,
 	Mainsettings *types.MainConfig,
 	IsFastMode bool,
 	BlockInfo *types.Module,
-	InterfaceNBT map[string]interface{},
 ) error {
-	var normal bool = false
-	var BlockNBT map[string]interface{} = map[string]interface{}{}
-	if InterfaceNBT == nil {
-		got, err := blockNBT_depends.ParseStringNBT(BlockInfo.StringNBT)
-		if err != nil {
-			return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%v,%v,%v), and the error log is %v", *BlockInfo.Block.Name, BlockInfo.Point.X, BlockInfo.Point.Y, BlockInfo.Point.Z, err)
-		}
-		GOT := *got
-		BlockNBT, normal = GOT.(map[string]interface{})
-		if !normal {
-			return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%v,%v,%v), and the error log is could not parse *BlockInfo.StringNBT; *BlockInfo.StringNBT = %#v", *BlockInfo.Block.Name, BlockInfo.Point.X, BlockInfo.Point.Y, BlockInfo.Point.Z, *BlockInfo.StringNBT)
-		}
-	} else {
-		BlockNBT = InterfaceNBT
+	defer apiIsUsing.Unlock()
+	apiIsUsing.Lock()
+	// lock(or unlock) api
+	got, err := blockNBT_depends.ParseStringNBT(BlockInfo.StringNBT)
+	if err != nil {
+		return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%v,%v,%v), and the error log is %v", *BlockInfo.Block.Name, BlockInfo.Point.X, BlockInfo.Point.Y, BlockInfo.Point.Z, err)
+	}
+	GOT := *got
+	BlockNBT, normal := GOT.(map[string]interface{})
+	if !normal {
+		return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%v,%v,%v), and the error log is could not parse *BlockInfo.StringNBT; *BlockInfo.StringNBT = %#v", *BlockInfo.Block.Name, BlockInfo.Point.X, BlockInfo.Point.Y, BlockInfo.Point.Z, *BlockInfo.StringNBT)
 	}
 	TYPE := blockNBT_depends.CheckIfIsEffectiveNBTBlock(*BlockInfo.Block.Name)
-	_, err := placeBlockWithNBTData(&input{
+	_, err = placeBlockWithNBTData(&input{
 		Environment:        Environment,
 		Mainsettings:       Mainsettings,
 		IsFastMode:         IsFastMode,
