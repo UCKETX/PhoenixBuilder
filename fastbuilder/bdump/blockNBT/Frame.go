@@ -6,6 +6,7 @@ import (
 	blockNBT_depends "phoenixbuilder/fastbuilder/bdump/blockNBT/depends"
 	"phoenixbuilder/fastbuilder/commands_generator"
 	"phoenixbuilder/fastbuilder/environment"
+	"phoenixbuilder/fastbuilder/mcstructure"
 	"phoenixbuilder/fastbuilder/types"
 	"phoenixbuilder/io/commands"
 	"phoenixbuilder/minecraft"
@@ -102,7 +103,7 @@ func placeFrame(
 		return fmt.Errorf("placeFrame: %v", err)
 	}
 	// replaceitem and enchant item stack
-	blockStates, err := blockNBT_depends.ParseStringNBT(BlockInfo.Block.BlockStates, true)
+	blockStates, err := mcstructure.ParseStringNBT(BlockInfo.Block.BlockStates, true)
 	if err != nil {
 		return fmt.Errorf("placeFrame: %v", err)
 	}

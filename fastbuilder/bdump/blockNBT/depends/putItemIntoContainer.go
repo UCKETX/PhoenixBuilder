@@ -3,6 +3,7 @@ package blockNBT_depends
 import (
 	"fmt"
 	"phoenixbuilder/fastbuilder/environment"
+	"phoenixbuilder/fastbuilder/mcstructure"
 	"phoenixbuilder/fastbuilder/types"
 	"phoenixbuilder/io/commands"
 	"phoenixbuilder/minecraft"
@@ -40,7 +41,7 @@ func openContainer(
 	containerOpenData = nil
 	InitProcessor()
 	// prepare
-	got, err := ParseStringNBT(*ContainerBlockStates, true)
+	got, err := mcstructure.ParseStringNBT(*ContainerBlockStates, true)
 	if err != nil {
 		return fmt.Errorf("openContainer: Failed to get block states; states = %#v", ContainerBlockStates)
 	}

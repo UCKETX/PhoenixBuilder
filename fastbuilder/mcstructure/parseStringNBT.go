@@ -1,4 +1,4 @@
-package blockNBT_depends
+package mcstructure
 
 import (
 	"fmt"
