@@ -53,10 +53,7 @@ func openContainer(
 	if !found {
 		return fmt.Errorf("openContainer: Failed to get the runtimeID of this container which named %v; ContainerBlockStates = %#v", *ContainerBlockName, containerBlockStates)
 	}
-	blockRuntimeID, found := chunk.StandardRuntimeIDToNEMCRuntimeID(standardRuntimeID)
-	if !found {
-		return fmt.Errorf("openContainer: Failed to converse StandardRuntimeID to NEMCRuntimeID; StandardRuntimeID = %#v, ContainerBlockName = %#v, ContainerBlockStates = %#v", standardRuntimeID, *ContainerBlockName, containerBlockStates)
-	}
+	blockRuntimeID := chunk.StandardRuntimeIDToNEMCRuntimeID(standardRuntimeID)
 	networkID, ok := ItemRunTimeID[MainHandItemInfo.Name]
 	// get blockRunTimeId and networkId
 	if ok {
