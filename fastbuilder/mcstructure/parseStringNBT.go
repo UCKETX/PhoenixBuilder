@@ -158,7 +158,7 @@ func (snbt *stringNBT) getValue() (interface{}, error) {
 		save := snbt.pointer
 		endLocation, err := snbt.getRightBarrier()
 		if err != nil {
-			return nil, fmt.Errorf("getValue: right barrier '\"' not found")
+			return nil, fmt.Errorf("getValue: Right barrier '\"' not found")
 		}
 		valueString = snbt.context[save:endLocation]
 		snbt.pointer = endLocation + 1
@@ -179,51 +179,58 @@ func (snbt *stringNBT) getValue() (interface{}, error) {
 		return got, nil
 		// compound
 	default:
-		got, err := snbt.highSearching([]string{",", " ", "\n", "\t", "}", "]"})
+		got, err := snbt.highSearching([]string{",", "}", "]"})
 		if err != nil {
-			return nil, fmt.Errorf("getValue: right barrier not found")
+			return nil, fmt.Errorf("getValue: Right barrier not found")
 		}
 		valueString = snbt.context[snbt.pointer:got.begin]
 		snbt.pointer = got.begin
 		// others
 	}
 	// get value
+	for {
+		if valueString[len(valueString)-1:] == " " || valueString[len(valueString)-1:] == "\n" || valueString[len(valueString)-1:] == "\t" {
+			valueString = valueString[:len(valueString)-1]
+		} else {
+			break
+		}
+	}
 	if len(valueString) <= 0 {
-		return nil, fmt.Errorf("getValue: invalid value")
+		return nil, fmt.Errorf("getValue: Invalid value")
 	}
 	switch strings.ToLower(valueString[len(valueString)-1:]) {
 	case "b":
 		got, err := strconv.ParseInt(valueString[:len(valueString)-1], 10, 8)
 		if err != nil {
-			return nil, fmt.Errorf("getValue: invalid TAG_Byte")
+			return nil, fmt.Errorf("getValue: Invalid TAG_Byte")
 		}
 		return byte(got), nil
 		// byte
 	case "s":
 		got, err := strconv.ParseInt(valueString[:len(valueString)-1], 10, 16)
 		if err != nil {
-			return nil, fmt.Errorf("getValue: invalid TAG_Short")
+			return nil, fmt.Errorf("getValue: Invalid TAG_Short")
 		}
 		return int16(got), nil
 		// short
 	case "l":
 		got, err := strconv.ParseInt(valueString[:len(valueString)-1], 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("getValue: invalid TAG_Long")
+			return nil, fmt.Errorf("getValue: Invalid TAG_Long")
 		}
 		return got, nil
 		// long
 	case "f":
 		got, err := strconv.ParseFloat(valueString[:len(valueString)-1], 32)
 		if err != nil {
-			return nil, fmt.Errorf("getValue: invalid TAG_Float")
+			return nil, fmt.Errorf("getValue: Invalid TAG_Float")
 		}
 		return float32(got), nil
 		// float
 	case "d":
 		got, err := strconv.ParseFloat(valueString[:len(valueString)-1], 64)
 		if err != nil {
-			return nil, fmt.Errorf("getValue: invalid TAG_Double")
+			return nil, fmt.Errorf("getValue: Invalid TAG_Double")
 		}
 		return got, nil
 		// double
@@ -239,18 +246,18 @@ func (snbt *stringNBT) getValue() (interface{}, error) {
 			}
 			// boolean(-> byte)
 			if strings.Contains(valueString, " ") || strings.Contains(valueString, "\n") || strings.Contains(valueString, "\t") {
-				return nil, fmt.Errorf("getValue: invalid TAG_String")
+				return nil, fmt.Errorf("getValue: Invalid TAG_String")
 			}
 			return valueString, nil
 			// string
 		}
 		if err1 == nil {
 			if valueString[0] == "0"[0] && len(valueString) > 1 {
-				return nil, fmt.Errorf("getValue: invalid TAG_Int")
+				return nil, fmt.Errorf("getValue: Invalid TAG_Int")
 			}
 			if valueString[0] == "-"[0] {
 				if valueString[1] == "0"[0] && len(valueString) > 2 {
-					return nil, fmt.Errorf("getValue: invalid TAG_Int")
+					return nil, fmt.Errorf("getValue: Invalid TAG_Int")
 				}
 			}
 			return int32(got1), nil
@@ -413,10 +420,6 @@ func (snbt *stringNBT) getListOrArray() (interface{}, error) {
 }
 
 func (snbt *stringNBT) getCompound(isParseBlockStates bool) (map[string]interface{}, error) {
-	err := snbt.jumpSpace()
-	if err != nil {
-		return nil, fmt.Errorf("getCompound: Incomplete compound")
-	}
 	if isParseBlockStates {
 		if snbt.getPartOfString(1) != "[" {
 			return nil, fmt.Errorf("getCompound: Incomplete compound")
@@ -464,23 +467,38 @@ func ParseStringNBT(SNBT string, IsParseBlockStates bool) (interface{}, error) {
 		pointer: 0,
 	}
 	// prepare
-	compound, err := reader.getCompound(IsParseBlockStates)
-	if err == nil {
+	err := reader.jumpSpace()
+	if err != nil {
+		reader.pointer = reader.pointer - 5
+		return nil, fmt.Errorf("ParseStringNBT: Failed to parse the target string-nbt, and the error may occurred in >>>%v<<<; SNBT = %#v", reader.getPartOfString(10), SNBT)
+	}
+	// prepare
+	switch reader.getPartOfString(1) {
+	case "{":
+		compound, err := reader.getCompound(IsParseBlockStates)
+		if err != nil {
+			reader.pointer = reader.pointer - 5
+			return nil, fmt.Errorf("ParseStringNBT: Failed to parse the target string-nbt, and the error may occurred in >>>%v<<<; SNBT = %#v", reader.getPartOfString(10), SNBT)
+		}
 		return compound, nil
-	}
-	// compound
-	reader.pointer = 0
-	list, err := reader.getListOrArray()
-	if err == nil {
+		// compound
+	case "[":
+		list, err := reader.getListOrArray()
+		if err != nil {
+			reader.pointer = reader.pointer - 5
+			return nil, fmt.Errorf("ParseStringNBT: Failed to parse the target string-nbt, and the error may occurred in >>>%v<<<; SNBT = %#v", reader.getPartOfString(10), SNBT)
+		}
 		return list, nil
-	}
-	// list
-	reader.pointer = 0
-	reader.context = fmt.Sprintf("%v,", reader.context)
-	value, err := reader.getValue()
-	if err == nil {
+		// list
+	default:
+		reader.context = fmt.Sprintf("%v,", reader.context)
+		value, err := reader.getValue()
+		if err != nil {
+			reader.context = reader.context[:len(reader.context)-1]
+			reader.pointer = reader.pointer - 5
+			return nil, fmt.Errorf("ParseStringNBT: Failed to parse the target string-nbt, and the error may occurred in >>>%v<<<; SNBT = %#v", reader.getPartOfString(10), SNBT)
+		}
 		return value, nil
+		// value
 	}
-	// value
-	return nil, fmt.Errorf("ParseStringNBT: Failed to parse the target string-nbt; SNBT = %#v", SNBT)
 }
