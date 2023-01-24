@@ -299,7 +299,7 @@ func SearchForBlock(structureInfo Area, pos BlockPos) (int, error) {
 	angleMark := structureInfo.SizeY*structureInfo.SizeZ*pos[0] + structureInfo.SizeZ*pos[1] + pos[2]
 	// 计算方块相对于 mcstructure 的角标
 	if angleMark > blockCount-1 {
-		return -1, fmt.Errorf("Index out of the list, occured in input[%v]", angleMark)
+		return -1, fmt.Errorf("Index out of the list, occurred in input[%v]", angleMark)
 	}
 	return int(angleMark), nil
 }
@@ -396,11 +396,11 @@ func DumpBlocks(
 				if ok {
 					_, ok := got["block_position_data"]
 					if !ok {
-						return []*types.Module{}, fmt.Errorf("DumpBlocks: Crashed by could not found \"block_position_data\", occured in %#v", targetArea.blockNBT[int(val)])
+						return []*types.Module{}, fmt.Errorf("DumpBlocks: Crashed by could not found \"block_position_data\", occurred in %#v", targetArea.blockNBT[int(val)])
 					}
 					block_position_data, normal := got["block_position_data"].(map[string]interface{})
 					if !normal {
-						return []*types.Module{}, fmt.Errorf("DumpBlocks: Crashed by invalid \"block_position_data\", occured in %#v", got["block_position_data"])
+						return []*types.Module{}, fmt.Errorf("DumpBlocks: Crashed by invalid \"block_position_data\", occurred in %#v", got["block_position_data"])
 					}
 					// 只要这个方块被记录了 NBT 数据，那么一定会有 block_position_data
 					_, ok = block_position_data["block_entity_data"]
@@ -409,7 +409,7 @@ func DumpBlocks(
 					if ok {
 						block_entity_data, normal := block_position_data["block_entity_data"].(map[string]interface{})
 						if !normal {
-							return []*types.Module{}, fmt.Errorf("DumpBlocks: Crashed by invalid \"block_entity_data\", occured in %#v", block_position_data["block_entity_data"])
+							return []*types.Module{}, fmt.Errorf("DumpBlocks: Crashed by invalid \"block_entity_data\", occurred in %#v", block_position_data["block_entity_data"])
 						}
 						// 拿一下这个方块的方块实体数据
 						if foreground_blockName == "chest" || foreground_blockName == "trapped_chest" {

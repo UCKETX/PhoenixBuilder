@@ -73,7 +73,7 @@ func GetData(input interface{}) (string, error) {
 		return compound, nil
 		// compound
 	}
-	return "", fmt.Errorf("GetData: Failed because of unknown type of the target data, occured in %#v", input)
+	return "", fmt.Errorf("GetData: Failed because of unknown type of the target data, occurred in %#v", input)
 }
 
 func Compound(input map[string]interface{}, outputBlockStatesMode bool) (string, error) {

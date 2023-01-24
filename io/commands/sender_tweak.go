@@ -60,7 +60,7 @@ func (sender *CommandSender) SendWSCommandWithResponce(command string) (*packet.
 	if resp != nil {
 		return resp, nil
 	}
-	return &packet.CommandOutput{}, fmt.Errorf("SendWSCommandWithResponce: unknown error occured")
+	return &packet.CommandOutput{}, fmt.Errorf("SendWSCommandWithResponce: unknown error occurred")
 }
 
 func (sender *CommandSender) SendChat(content string) error {

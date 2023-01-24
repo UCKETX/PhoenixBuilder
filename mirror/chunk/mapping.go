@@ -19,6 +19,8 @@ import (
 var NEMCAirRID uint32
 var NEMCRuntimeIDToStandardRuntimeID func(nemcRuntimeID uint32) (runtimeID uint32)
 
+var StandardRuntimeIDToNEMCRuntimeID func(standardRuntimeID uint32) (runtimeID uint32, found bool)
+
 // the only place nemc runtime id is used is in decoding of chunk data packet, so in any other place, standard runtime id is used
 // so in function below, the "runtimeID" is always standard runtime id, not nemc runtime id
 var AirRID uint32
@@ -517,10 +519,24 @@ func InitMapping(mappingInData []byte) {
 	}
 
 	nemcToMCRIDMapping := mappingIn.NEMCRidToMCRid
-
+	mcRIDToNemcMapping := map[int16]int16{}
 	NEMCAirRID = 6565
+
+	for key, value := range nemcToMCRIDMapping {
+		mcRIDToNemcMapping[value] = int16(key)
+	}
+	mcRIDToNemcMapping[int16(AirRID)] = int16(NEMCAirRID)
+
 	NEMCRuntimeIDToStandardRuntimeID = func(nemcRuntimeID uint32) (runtimeID uint32) {
 		return uint32(nemcToMCRIDMapping[nemcRuntimeID])
+	}
+	StandardRuntimeIDToNEMCRuntimeID = func(standardRuntimeID uint32) (runtimeID uint32, found bool) {
+		value, ok := mcRIDToNemcMapping[int16(standardRuntimeID)]
+		if ok {
+			return uint32(value), true
+		} else {
+			return 0, false
+		}
 	}
 	if NEMCRuntimeIDToStandardRuntimeID(NEMCAirRID) != AirRID {
 		panic(fmt.Errorf("air rid not matching: %d vs %d", NEMCRuntimeIDToStandardRuntimeID(NEMCAirRID), AirRID))

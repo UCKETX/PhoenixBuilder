@@ -100,15 +100,15 @@ func PlaceBlockWithNBTDataRun(
 	defer apiIsUsing.Unlock()
 	apiIsUsing.Lock()
 	// lock(or unlock) api
-	got, err := blockNBT_depends.ParseStringNBT(BlockInfo.StringNBT)
+	got, err := blockNBT_depends.ParseStringNBT(*BlockInfo.StringNBT, false)
 	if err != nil {
 		return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%v,%v,%v), and the error log is %v", *BlockInfo.Block.Name, BlockInfo.Point.X, BlockInfo.Point.Y, BlockInfo.Point.Z, err)
 	}
-	GOT := *got
-	BlockNBT, normal := GOT.(map[string]interface{})
+	BlockNBT, normal := got.(map[string]interface{})
 	if !normal {
-		return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%v,%v,%v), and the error log is could not parse *BlockInfo.StringNBT; *BlockInfo.StringNBT = %#v", *BlockInfo.Block.Name, BlockInfo.Point.X, BlockInfo.Point.Y, BlockInfo.Point.Z, *BlockInfo.StringNBT)
+		return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%v,%v,%v), because of could not parse StringNBT; StringNBT = %#v", *BlockInfo.Block.Name, BlockInfo.Point.X, BlockInfo.Point.Y, BlockInfo.Point.Z, *BlockInfo.StringNBT)
 	}
+	// get interface nbt
 	TYPE := blockNBT_depends.CheckIfIsEffectiveNBTBlock(*BlockInfo.Block.Name)
 	_, err = placeBlockWithNBTData(&input{
 		Environment:        Environment,

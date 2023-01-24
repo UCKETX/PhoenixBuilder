@@ -54,7 +54,7 @@ func upgradeExecuteCommandRun(cmd string) struct {
 		resultType:    3,
 		errorLog:      nil,
 	}
-	if fmt.Sprint(err) == "upgradeExecuteCommand: searchForExecute: try using a new version of the execute command" {
+	if fmt.Sprint(err) == "upgradeExecuteCommand: searchForExecute: Try using a new version of the execute command" {
 		single.resultType = 2
 		single.errorLocation = errLocation
 		return single
@@ -158,16 +158,18 @@ func (cmd *command) highSearching(input []string) (struct {
 	}{
 		begin: 2147483647,
 	}
+	success := false
 	for _, value := range ansSave {
 		if value.begin < minRecord.begin {
 			minRecord = value
+			success = true
 		}
 	}
-	if minRecord.begin == 2147483647 {
+	if !success {
 		return struct {
 			begin int
 			end   int
-		}{}, fmt.Errorf("highSearching: nothing found")
+		}{}, fmt.Errorf("highSearching: Nothing found")
 	}
 	return minRecord, nil
 }
@@ -182,7 +184,7 @@ func (cmd *command) getRightBarrier() (int, error) {
 		quotationMark, err1 = cmd.index("\"")
 		barrier, err2 = cmd.index("]")
 		if err2 != nil {
-			return 0, fmt.Errorf("getRightBarrier: right barrier not found")
+			return 0, fmt.Errorf("getRightBarrier: Right barrier not found")
 		}
 		if err1 != nil {
 			return barrier, nil
@@ -190,7 +192,7 @@ func (cmd *command) getRightBarrier() (int, error) {
 			cmd.pointer = quotationMark + 1
 			cmd.pointer, err = cmd.index("\"")
 			if err != nil {
-				return 0, fmt.Errorf("getRightBarrier: unexpected '\"' occurred in %v", quotationMark)
+				return 0, fmt.Errorf("getRightBarrier: Unexpected '\"' occurred in %v", quotationMark)
 			}
 			cmd.pointer++
 		} else {
@@ -212,7 +214,7 @@ func (cmd *command) searchForExecute() (bool, error) {
 	list := []string{"align", "anchored", "as", "at", "facing", "in", "positioned", "rotated", "if", "unless", "run"}
 	for _, value := range list {
 		if strings.ToLower(cmd.getPartOfString(len(value))) == value {
-			return false, fmt.Errorf("searchForExecute: try using a new version of the execute command")
+			return false, fmt.Errorf("searchForExecute: Try using a new version of the execute command")
 		}
 	}
 	return false, nil
@@ -221,18 +223,18 @@ func (cmd *command) searchForExecute() (bool, error) {
 func (cmd *command) getSelector() (string, error) {
 	err := cmd.jumpSpace()
 	if err != nil {
-		return "", fmt.Errorf("getSelector: incomplete parameter")
+		return "", fmt.Errorf("getSelector: Incomplete parameter")
 	}
 	if cmd.getPartOfString(1) == "@" {
 		ans, err := cmd.highSearching([]string{"@s", "@a", "@p", "@e", "@r", "@initiator", "@c", "@v"})
 		if err != nil {
-			return "", fmt.Errorf("getSelector: incomplete selector prefix")
+			return "", fmt.Errorf("getSelector: Incomplete selector prefix")
 		}
 		selector := cmd.context[ans.begin:ans.end]
 		cmd.pointer = ans.end
 		err = cmd.jumpSpace()
 		if err != nil {
-			return "", fmt.Errorf("getSelector: incomplete selector parameter")
+			return "", fmt.Errorf("getSelector: Incomplete selector parameter")
 		}
 		if cmd.getPartOfString(1) != "[" {
 			cmd.pointer = ans.end
@@ -240,7 +242,7 @@ func (cmd *command) getSelector() (string, error) {
 		} else {
 			transit, err := cmd.getRightBarrier()
 			if err != nil {
-				return "", fmt.Errorf("getSelector: incomplete selector parameter")
+				return "", fmt.Errorf("getSelector: Incomplete selector parameter")
 			}
 			save := cmd.pointer
 			cmd.pointer = transit + 1
@@ -250,7 +252,7 @@ func (cmd *command) getSelector() (string, error) {
 		cmd.pointer++
 		transit, err := cmd.index("\"")
 		if err != nil {
-			return "", fmt.Errorf("getSelector: unexpected '\"'")
+			return "", fmt.Errorf("getSelector: Unexpected '\"'")
 		}
 		save := cmd.pointer - 1
 		cmd.pointer = transit + 1
@@ -258,7 +260,7 @@ func (cmd *command) getSelector() (string, error) {
 	} else {
 		transit, err := cmd.highSearching([]string{" ", "^", "~"})
 		if err != nil {
-			return "", fmt.Errorf("getSelector: invalid selector")
+			return "", fmt.Errorf("getSelector: Invalid selector")
 		}
 		save := cmd.pointer
 		cmd.pointer = transit.end - 1
@@ -269,7 +271,7 @@ func (cmd *command) getSelector() (string, error) {
 func (cmd *command) getPos() (string, error) {
 	err := cmd.jumpSpace()
 	if err != nil {
-		return "", fmt.Errorf("getPos: incomplete parameter")
+		return "", fmt.Errorf("getPos: Incomplete parameter")
 	}
 	ans := []string{}
 	for i := 0; i < 3; i++ {
@@ -294,13 +296,13 @@ func (cmd *command) getPos() (string, error) {
 			}
 		}
 		if !successStates {
-			return "", fmt.Errorf("getPos: invalid position")
+			return "", fmt.Errorf("getPos: Invalid position")
 		}
 		ans = append(ans, cmd.context[cmd.pointer:transit.begin])
 		cmd.pointer = transit.begin
 		err = cmd.jumpSpace()
 		if err != nil {
-			return "", fmt.Errorf("getPos: incomplete parameter occurred in %v", i)
+			return "", fmt.Errorf("getPos: Incomplete parameter occurred in %v", i)
 		}
 	}
 	for i, value := range ans {
@@ -309,7 +311,7 @@ func (cmd *command) getPos() (string, error) {
 			if value != "" {
 				j, err := strconv.ParseFloat(value, 32)
 				if err != nil {
-					return "", fmt.Errorf("getPos: invalid position occurred in %v", ans[i])
+					return "", fmt.Errorf("getPos: Invalid position occurred in %v", ans[i])
 				}
 				value = strconv.FormatFloat(j, 'f', -1, 32)
 				if value == "0" || value == "-0" {
@@ -325,7 +327,7 @@ func (cmd *command) getPos() (string, error) {
 			if strings.Contains(value, ".") {
 				j, err := strconv.ParseFloat(value, 32)
 				if err != nil {
-					return "", fmt.Errorf("getPos: invalid position occurred in %v", ans[i])
+					return "", fmt.Errorf("getPos: Invalid position occurred in %v", ans[i])
 				}
 				value = strconv.FormatFloat(j, 'f', -1, 32)
 				if value == "-0" {
@@ -335,7 +337,7 @@ func (cmd *command) getPos() (string, error) {
 			} else {
 				j, err := strconv.ParseFloat(value, 32)
 				if err != nil {
-					return "", fmt.Errorf("getPos: invalid position occurred in %v", ans[i])
+					return "", fmt.Errorf("getPos: Invalid position occurred in %v", ans[i])
 				}
 				value = strconv.FormatFloat(j, 'f', -1, 32)
 				if value == "-0" {
@@ -347,7 +349,7 @@ func (cmd *command) getPos() (string, error) {
 	}
 	if ans[0][0] == "^"[0] || ans[1][0] == "^"[0] || ans[2][0] == "^"[0] {
 		if ans[0][0] != "^"[0] || ans[1][0] != "^"[0] || ans[2][0] != "^"[0] {
-			return "", fmt.Errorf("getPos: incorrect position")
+			return "", fmt.Errorf("getPos: Incorrect position")
 		}
 	}
 	return fmt.Sprintf("%v %v %v", ans[0], ans[1], ans[2]), nil
@@ -356,31 +358,31 @@ func (cmd *command) getPos() (string, error) {
 func (cmd *command) detectBlock() (string, error) {
 	err := cmd.jumpSpace()
 	if err != nil {
-		return "", fmt.Errorf("detectBlock: incomplete parameter")
+		return "", fmt.Errorf("detectBlock: Incomplete parameter")
 	}
 	if strings.ToLower(cmd.getPartOfString(6)) == "detect" {
 		cmd.pointer = cmd.pointer + 6
 		pos, err := cmd.getPos()
 		if err != nil {
-			return "", fmt.Errorf("detectBlock: failed to get the position, and the error log is %v", err)
+			return "", fmt.Errorf("detectBlock: Failed to get the position, and the error log is %v", err)
 		}
 		err = cmd.jumpSpace()
 		if err != nil {
-			return "", fmt.Errorf("detectBlock: incomplete parameter")
+			return "", fmt.Errorf("detectBlock: Incomplete parameter")
 		}
 		startLocation := cmd.pointer
 		endLocation, err := cmd.index(" ")
 		if err != nil {
-			return "", fmt.Errorf("detectBlock: incomplete parameter")
+			return "", fmt.Errorf("detectBlock: Incomplete parameter")
 		}
 		cmd.pointer = endLocation + 1
 		err = cmd.jumpSpace()
 		if err != nil {
-			return "", fmt.Errorf("detectBlock: incomplete parameter")
+			return "", fmt.Errorf("detectBlock: Incomplete parameter")
 		}
 		spaceLocation, err := cmd.index(" ")
 		if err != nil {
-			return "", fmt.Errorf("detectBlock: incomplete parameter")
+			return "", fmt.Errorf("detectBlock: Incomplete parameter")
 		}
 		cmd.pointer = spaceLocation
 		return fmt.Sprintf(" if block %v %v %v", pos, cmd.context[startLocation:endLocation], cmd.context[endLocation+1:spaceLocation]), nil

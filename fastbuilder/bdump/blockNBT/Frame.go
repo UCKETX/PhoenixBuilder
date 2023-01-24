@@ -13,6 +13,9 @@ import (
 	"phoenixbuilder/minecraft/protocol/packet"
 )
 
+const glowFrameBlockRunTimeId = 179
+const frameBlockRunTimeId = 4211
+
 type FrameData struct {
 	ItemRotation float32
 	Item         types.ChestData
@@ -99,11 +102,14 @@ func placeFrame(
 		return fmt.Errorf("placeFrame: %v", err)
 	}
 	// replaceitem and enchant item stack
-	blockStates, err := blockNBT_depends.ParseStringBlockStates(&BlockInfo.Block.BlockStates)
+	blockStates, err := blockNBT_depends.ParseStringNBT(BlockInfo.Block.BlockStates, true)
 	if err != nil {
 		return fmt.Errorf("placeFrame: %v", err)
 	}
-	BLOCKSTATES := *blockStates
+	BLOCKSTATES, normal := blockStates.(map[string]interface{})
+	if !normal {
+		return fmt.Errorf("placeFrame: Failed to converse BlockStates to map[string]interface{}, BlockStates = %#v\n", BlockInfo.Block.BlockStates)
+	}
 	_, ok := BLOCKSTATES["facing_direction"]
 	if !ok {
 		return fmt.Errorf("placeFrame: Could not find BlockInfo.Block.BlockStates[\"facing_direction\"]; BlockInfo.Block.BlockStates = %#v", BlockInfo.Block.BlockStates)
@@ -128,10 +134,10 @@ func placeFrame(
 		// 0.0 ≤ FrameData.ItemRotation ≤ 315.0
 		var blockRuntimeID uint32 = 0
 		if *BlockInfo.Block.Name == "glow_frame" {
-			blockRuntimeID = 179
+			blockRuntimeID = glowFrameBlockRunTimeId
 		}
 		if *BlockInfo.Block.Name == "frame" {
-			blockRuntimeID = 4211
+			blockRuntimeID = frameBlockRunTimeId
 		}
 		blockRuntimeID = blockRuntimeID + uint32(facing_direction)
 		// get run time id of frame block

@@ -8,6 +8,8 @@ import (
 	"phoenixbuilder/minecraft"
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
+	"phoenixbuilder/mirror/chunk"
+	"strings"
 	"time"
 )
 
@@ -21,242 +23,6 @@ type EnchItem struct {
 
 type EnchItemList []EnchItem
 
-func containerBlockStatesToBlockData(name string, states string) (uint16, error) {
-	got, err := ParseStringBlockStates(&states)
-	if err != nil {
-		return 0, fmt.Errorf("containerBlockStatesToBlockData: %v", err)
-	}
-	blockStates := *got
-	// prepare
-	if name == "lava_cauldron" || name == "cauldron" {
-		_, ok := blockStates["fill_level"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"fill_level\"]; blockStates = %#v", name, blockStates)
-		}
-		fill_level, normal := blockStates["fill_level"].(int32)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"fill_level\"]; blockStates = %#v", name, blockStates)
-		}
-		_, ok = blockStates["cauldron_liquid"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"cauldron_liquid\"]; blockStates = %#v", name, blockStates)
-		}
-		cauldron_liquid, normal := blockStates["cauldron_liquid"].(string)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"cauldron_liquid\"]; blockStates = %#v", name, blockStates)
-		}
-		if cauldron_liquid == "water" {
-			return uint16(fill_level), nil
-		}
-		if cauldron_liquid == "lava" {
-			return uint16(fill_level) + 8, nil
-		}
-		if cauldron_liquid == "powder_snow" {
-			return uint16(fill_level) + 16, nil
-		}
-	}
-	// 炼药锅（岩浆炼药锅）
-	if name == "smoker" || name == "lit_smoker" || name == "trapped_chest" || name == "chest" || name == "hopper" || name == "lit_blast_furnace" || name == "blast_furnace" || name == "furnace" || name == "lit_furnace" {
-		_, ok := blockStates["facing_direction"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"facing_direction\"]; blockStates = %#v", name, blockStates)
-		}
-		facing_direction, normal := blockStates["facing_direction"].(int32)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"facing_direction\"]; blockStates = %#v", name, blockStates)
-		}
-		return uint16(facing_direction), nil
-	}
-	// 烟熏炉（发光的烟熏炉）, 陷阱箱, 箱子, 漏斗, 熔炉（发光的熔炉）
-	if name == "undyed_shulker_box" || name == "jukebox" {
-		return 0, nil
-	}
-	// 未染色的潜影盒, 唱片机
-	if name == "barrel" {
-		_, ok := blockStates["facing_direction"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"facing_direction\"]; blockStates = %#v", name, blockStates)
-		}
-		facing_direction, normal := blockStates["facing_direction"].(int32)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"facing_direction\"]; blockStates = %#v", name, blockStates)
-		}
-		_, ok = blockStates["open_bit"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"open_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		got, normal := blockStates["open_bit"].(string)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"open_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		var open_bit uint8 = 0
-		if got == "true" {
-			open_bit = 1
-		} else if got != "false" {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could unexpected blockStates[\"open_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		if open_bit == 0 {
-			return uint16(facing_direction), nil
-		} else {
-			return uint16(facing_direction) + 8, nil
-		}
-	}
-	// 木桶
-	if name == "shulker_box" {
-		_, ok := blockStates["color"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"color\"]; blockStates = %#v", name, blockStates)
-		}
-		color, normal := blockStates["color"].(string)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"color\"]; blockStates = %#v", name, blockStates)
-		}
-		switch color {
-		case "white":
-			return 0, nil
-		case "orange":
-			return 1, nil
-		case "magenta":
-			return 2, nil
-		case "light_blue":
-			return 3, nil
-		case "yellow":
-			return 4, nil
-		case "lime":
-			return 5, nil
-		case "pink":
-			return 6, nil
-		case "gray":
-			return 7, nil
-		case "silver":
-			return 8, nil
-		case "cyan":
-			return 9, nil
-		case "purple":
-			return 10, nil
-		case "blue":
-			return 11, nil
-		case "brown":
-			return 12, nil
-		case "green":
-			return 13, nil
-		case "red":
-			return 14, nil
-		case "black":
-			return 15, nil
-		}
-	}
-	// 染色的潜影盒
-	if name == "lectern" {
-		_, ok := blockStates["direction"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"direction\"]; blockStates = %#v", name, blockStates)
-		}
-		direction, normal := blockStates["direction"].(int32)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"direction\"]; blockStates = %#v", name, blockStates)
-		}
-		_, ok = blockStates["powered_bit"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"powered_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		got, normal := blockStates["powered_bit"].(string)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"powered_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		var powered_bit uint8 = 0
-		if got == "true" {
-			powered_bit = 1
-		} else if got != "false" {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could unexpected blockStates[\"powered_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		if powered_bit == 0 {
-			return uint16(direction), nil
-		} else {
-			return uint16(direction) + 4, nil
-		}
-	}
-	// 讲台
-	if name == "dropper" || name == "dispenser" {
-		_, ok := blockStates["facing_direction"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"facing_direction\"]; blockStates = %#v", name, blockStates)
-		}
-		facing_direction, normal := blockStates["facing_direction"].(int32)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"facing_direction\"]; blockStates = %#v", name, blockStates)
-		}
-		_, ok = blockStates["triggered_bit"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"triggered_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		got, normal := blockStates["triggered_bit"].(string)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"triggered_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		var triggered_bit uint8 = 0
-		if got == "true" {
-			triggered_bit = 1
-		} else if got != "false" {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could unexpected blockStates[\"triggered_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		if triggered_bit == 0 {
-			return uint16(facing_direction), nil
-		} else {
-			return uint16(facing_direction) + 8, nil
-		}
-	}
-	// 投掷器, 发射器
-	if name == "brewing_stand" {
-		_, ok := blockStates["brewing_stand_slot_a_bit"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"brewing_stand_slot_a_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		got, normal := blockStates["brewing_stand_slot_a_bit"].(string)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"brewing_stand_slot_a_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		var brewing_stand_slot_a_bit uint8 = 0
-		if got == "true" {
-			brewing_stand_slot_a_bit = 1
-		} else if got != "false" {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could unexpected blockStates[\"brewing_stand_slot_a_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		_, ok = blockStates["brewing_stand_slot_b_bit"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"brewing_stand_slot_b_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		got, normal = blockStates["brewing_stand_slot_b_bit"].(string)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"brewing_stand_slot_b_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		var brewing_stand_slot_b_bit uint8 = 0
-		if got == "true" {
-			brewing_stand_slot_b_bit = 1
-		} else if got != "false" {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could unexpected blockStates[\"brewing_stand_slot_b_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		_, ok = blockStates["brewing_stand_slot_c_bit"]
-		if !ok {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not find blockStates[\"brewing_stand_slot_c_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		got, normal = blockStates["brewing_stand_slot_c_bit"].(string)
-		if !normal {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could not parse blockStates[\"brewing_stand_slot_c_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		var brewing_stand_slot_c_bit uint8 = 0
-		if got == "true" {
-			brewing_stand_slot_c_bit = 1
-		} else if got != "false" {
-			return 0, fmt.Errorf("containerBlockStatesToBlockData: Crashed in %v, because of could unexpected blockStates[\"brewing_stand_slot_c_bit\"]; blockStates = %#v", name, blockStates)
-		}
-		slotSit := [3]uint8{brewing_stand_slot_c_bit, brewing_stand_slot_b_bit, brewing_stand_slot_a_bit}
-		return uint16(slotSit[2]*4 + slotSit[1]*2 + slotSit[0]), nil
-	}
-	// 酿造台
-	return 0, fmt.Errorf("containerBlockStatesToBlockData: %v is not a supported container; blockStates = %#v", name, blockStates)
-}
-
 func openContainer(
 	Environment *environment.PBEnvironment,
 	MainHandItemInfo *types.ChestSlot,
@@ -264,17 +30,35 @@ func openContainer(
 	ContainerBlockStates *string,
 	ContainerPos [3]int32,
 ) error {
+	var blockName string
+	if !strings.Contains(*ContainerBlockName, "minecraft:") {
+		blockName = fmt.Sprintf("minecraft:%v", *ContainerBlockName)
+	} else {
+		blockName = *ContainerBlockName
+	}
+	// prepare
 	containerOpenData = nil
 	InitProcessor()
 	// prepare
-	got, err := containerBlockStatesToBlockData(*ContainerBlockName, *ContainerBlockStates)
+	got, err := ParseStringNBT(*ContainerBlockStates, true)
 	if err != nil {
-		return fmt.Errorf("openContainer: %v", err)
+		return fmt.Errorf("openContainer: Failed to get block states; states = %#v", ContainerBlockStates)
 	}
-	blockRuntimeID, ok1 := ContainerDataToBlockRunTimeId[SingleContainer{*ContainerBlockName, got}]
-	networkID, ok2 := ItemRunTimeID[MainHandItemInfo.Name]
+	containerBlockStates, normal := got.(map[string]interface{})
+	if !normal {
+		return fmt.Errorf("openContainer: Failed to converse ContainerBlockStates to map[string]interface{}; ContainerBlockStates = %#v", ContainerBlockStates)
+	}
+	standardRuntimeID, found := chunk.StateToRuntimeID(blockName, containerBlockStates) // 我相信你一定找得到的
+	if !found {
+		return fmt.Errorf("openContainer: Failed to get the runtimeID of this container which named %v; ContainerBlockStates = %#v", *ContainerBlockName, containerBlockStates)
+	}
+	blockRuntimeID, found := chunk.StandardRuntimeIDToNEMCRuntimeID(standardRuntimeID)
+	if !found {
+		return fmt.Errorf("openContainer: Failed to converse StandardRuntimeID to NEMCRuntimeID; StandardRuntimeID = %#v, ContainerBlockName = %#v, ContainerBlockStates = %#v", standardRuntimeID, *ContainerBlockName, containerBlockStates)
+	}
+	networkID, ok := ItemRunTimeID[MainHandItemInfo.Name]
 	// get blockRunTimeId and networkId
-	if ok1 && ok2 {
+	if ok {
 		Environment.Connection.(*minecraft.Conn).WritePacket(&packet.InventoryTransaction{
 			LegacyRequestID:    0,
 			LegacySetItemSlots: []protocol.LegacySetItemSlot(nil),

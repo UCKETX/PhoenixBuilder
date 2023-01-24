@@ -7,6 +7,7 @@ import (
 	"phoenixbuilder/fastbuilder/environment"
 	"phoenixbuilder/fastbuilder/types"
 	"phoenixbuilder/io/commands"
+	"phoenixbuilder/mirror/chunk"
 	"strings"
 )
 
@@ -112,6 +113,18 @@ func getContainerData(container interface{}) (types.ChestData, error) {
 		count = uint8(count_got)
 		// 拿一下物品数量
 		// 它(物品数量)是一定存在的
+		_, ok = containerData["Name"]
+		if !ok {
+			return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"Name\"]; container[%v] = %#v", key, key, containerData)
+		}
+		got, normal := containerData["Name"].(string)
+		if !normal {
+			return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"Name\"]; container[%v] = %#v", key, key, containerData)
+		}
+		name = strings.Replace(got, "minecraft:", "", 1)
+		// 拿一下这个物品的物品名称
+		// 可以看到，我这里是把命名空间删了的
+		// 它(物品名称)是一定存在的
 		_, ok = containerData["Damage"]
 		if !ok {
 			return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"Damage\"]; container[%v] = %#v", key, key, containerData)
@@ -179,38 +192,44 @@ func getContainerData(container interface{}) (types.ChestData, error) {
 			// 如果 Block 找得到则说明这个物品是一个方块
 			_, ok = Block["val"]
 			if !ok {
-				return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"Block\"][\"val\"]; container[%v][\"Block\"] = %#v", key, key, Block)
+				_, ok := Block["states"]
+				if !ok {
+					return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"Block\"][\"states\"]; container[%v][\"Block\"] = %#v", key, key, Block)
+				}
+				got, normal := Block["states"].(map[string]interface{})
+				if !normal {
+					return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"Block\"][\"states\"]; container[%v][\"Block\"] = %#v", key, key, Block)
+				}
+				standardRuntimeID, found := chunk.StateToRuntimeID(name, got)
+				if !found {
+					itemData = 0
+				} else {
+					legacyBlock, found := chunk.RuntimeIDToLegacyBlock(standardRuntimeID)
+					if !found {
+						itemData = 0
+					} else {
+						itemData = legacyBlock.Val
+					}
+				}
+			} else {
+				got, normal := Block["val"].(int16)
+				if !normal {
+					return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"Block\"][\"val\"]; container[%v][\"Block\"] = %#v", key, key, Block)
+				}
+				itemData = uint16(got)
 			}
-			got, normal := Block["val"].(int16)
-			if !normal {
-				return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"Block\"][\"val\"]; container[%v][\"Block\"] = %#v", key, key, Block)
-			}
-			itemData = uint16(got)
 			// 如果这个物品是个方块，也就是 Block 找得到的话
-			// 那在 Block 里面一定有一个 val 去声明这个方块的方块数据值(附加值)
+			// 那在 Block 里面一定有一个 val 去声明这个方块的方块数据值(附加值) [仅 MEMCBE]
 		}
 		// 拿一下这个方块的方块数据值(附加值)
 		// 这个 Block 里的 val 一定是这个物品对应的方块的方块数据值(附加值)
-		// 需要说明的是，Block 不一定存在，但如果 Block 存在，则 val 一定存在
-		// 仅限网易我的世界中国版导出的结构有此 val 字段
+		// 需要说明的是，Block 不一定存在，但如果 Block 存在，则 val 一定存在 [仅 NEMCBE]
 		/*
 			以上三个都在拿物品数据值(附加值)
 			需要说明的是，数据值的获取优先级是这样的
 			Damage < tag["Damage"] < Block["val"]
 			需要说明的是，以上列举的三个情况不能涵盖所有的物品数据值(附加值)的情况，所以我希望可以有个人看一下普世情况是长什么样的，请帮帮我！
 		*/
-		_, ok = containerData["Name"]
-		if !ok {
-			return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"Name\"]; container[%v] = %#v", key, key, containerData)
-		}
-		got, normal := containerData["Name"].(string)
-		if !normal {
-			return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"Name\"]; container[%v] = %#v", key, key, containerData)
-		}
-		name = strings.Replace(got, "minecraft:", "", 1)
-		// 拿一下这个物品的物品名称
-		// 可以看到，我这里是把命名空间删了的
-		// 它(物品名称)是一定存在的
 		_, ok = containerData["Slot"]
 		if ok {
 			got, normal := containerData["Slot"].(byte)
