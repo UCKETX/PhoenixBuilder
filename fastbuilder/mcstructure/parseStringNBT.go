@@ -420,9 +420,6 @@ func (snbt *stringNBT) getListOrArray() (interface{}, error) {
 }
 
 func (snbt *stringNBT) getCompound() (map[string]interface{}, error) {
-	if snbt.getPartOfString(1) != "{" {
-		return nil, fmt.Errorf("getCompound: Incomplete compound")
-	}
 	snbt.pointer++
 	ans := map[string]interface{}{}
 	for {
