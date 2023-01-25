@@ -11,7 +11,6 @@ import (
 	"phoenixbuilder/minecraft/protocol/packet"
 	"phoenixbuilder/mirror/chunk"
 	"strings"
-	"time"
 )
 
 var containerOpenData interface{}
@@ -43,7 +42,7 @@ func openContainer(
 	// prepare
 	got, err := mcstructure.ParseStringNBT(*ContainerBlockStates, true)
 	if err != nil {
-		return fmt.Errorf("openContainer: Failed to get block states; states = %#v", ContainerBlockStates)
+		return fmt.Errorf("openContainer: Failed to get block states; states = %#v", *ContainerBlockStates)
 	}
 	containerBlockStates, normal := got.(map[string]interface{})
 	if !normal {
@@ -90,7 +89,11 @@ func openContainer(
 		})
 	}
 	// open container
-	containerOpenData = PacketProcessor(Environment, true, packet.IDContainerOpen)[0].(*packet.ContainerOpen)
+	contaomerOpenDataGot, err := PacketProcessor(Environment, true, packet.IDContainerOpen)
+	if err != nil {
+		return fmt.Errorf("openContainer: %v", err)
+	}
+	containerOpenData = contaomerOpenDataGot[0].(*packet.ContainerOpen)
 	// process packet
 	return nil
 }
@@ -116,7 +119,10 @@ func requestStackNetworkID(
 	if err != nil {
 		return fmt.Errorf("requestStackNetworkID: %v", err)
 	}
-	got := PacketProcessor(Environment, false, packet.IDInventoryContent)
+	got, err := PacketProcessor(Environment, false, packet.IDInventoryContent)
+	if err != nil {
+		return fmt.Errorf("requestStackNetworkID: %v", err)
+	}
 	for _, value := range got {
 		i := value.(*packet.InventoryContent)
 		if i.WindowID == 0 {
@@ -174,7 +180,6 @@ func PutItemIntoContainerRun(
 	Environment *environment.PBEnvironment,
 	Input EnchItemList,
 ) error {
-	var cod packet.ContainerOpen
 	err := ReplaceitemAndEnchant(Environment, &Input[0].WantPutItem)
 	if err != nil {
 		return fmt.Errorf("PutItemIntoContainerRun: %v", err)
@@ -182,18 +187,6 @@ func PutItemIntoContainerRun(
 	err = openContainer(Environment, &Input[0].WantPutItem, Input[0].ContainerInfo.Block.Name, &Input[0].ContainerInfo.Block.BlockStates, [3]int32{int32(Input[0].ContainerInfo.Point.X), int32(Input[0].ContainerInfo.Point.Y), int32(Input[0].ContainerInfo.Point.Z)})
 	if err != nil {
 		return fmt.Errorf("PutItemIntoContainerRun: %v", err)
-	}
-	failedCount := 0
-	for {
-		if failedCount > 100 {
-			return fmt.Errorf("PutItemIntoContainerRun: Failed to open the container, please check the target area is loaded")
-		}
-		if containerOpenData != nil {
-			cod = *containerOpenData.(*packet.ContainerOpen)
-			break
-		}
-		failedCount++
-		time.Sleep(50 * time.Millisecond)
 	}
 	for key, value := range Input {
 		if key > 0 {
@@ -208,6 +201,6 @@ func PutItemIntoContainerRun(
 			return fmt.Errorf("PutItemIntoContainerRun: %v", err)
 		}
 	}
-	closeContainer(Environment, cod.WindowID)
+	closeContainer(Environment, containerOpenData.(*packet.ContainerOpen).WindowID)
 	return nil
 }

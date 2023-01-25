@@ -1,6 +1,7 @@
 package blockNBT_depends
 
 import (
+	"fmt"
 	"phoenixbuilder/fastbuilder/environment"
 	"phoenixbuilder/io/commands"
 	"phoenixbuilder/minecraft/protocol/packet"
@@ -9,7 +10,7 @@ import (
 var Islistening bool
 var ReceivePacket []packet.Packet
 
-func PacketProcessor(Environment *environment.PBEnvironment, NeedWaiting bool, RequestPacketId uint32) []packet.Packet {
+func PacketProcessor(Environment *environment.PBEnvironment, NeedWaiting bool, RequestPacketId uint32) ([]packet.Packet, error) {
 	if NeedWaiting {
 		cmdsender := Environment.CommandSender.(*commands.CommandSender)
 		cmdsender.SendWSCommandWithResponce("list")
@@ -24,7 +25,10 @@ func PacketProcessor(Environment *environment.PBEnvironment, NeedWaiting bool, R
 	// get datas
 	closeProcessor()
 	// close processor
-	return ans
+	if len(ans) == 0 {
+		return []packet.Packet{}, fmt.Errorf("PacketProcessor: packet which numbered %v have been not found", RequestPacketId)
+	}
+	return ans, nil
 }
 
 func InitProcessor() {

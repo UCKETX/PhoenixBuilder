@@ -172,7 +172,7 @@ func (snbt *stringNBT) getValue() (interface{}, error) {
 		return got, nil
 		// list
 	case "{":
-		got, err := snbt.getCompound(false)
+		got, err := snbt.getCompound()
 		if err != nil {
 			return nil, fmt.Errorf("getValue: %v", err)
 		}
@@ -419,12 +419,8 @@ func (snbt *stringNBT) getListOrArray() (interface{}, error) {
 	}
 }
 
-func (snbt *stringNBT) getCompound(isParseBlockStates bool) (map[string]interface{}, error) {
-	if isParseBlockStates {
-		if snbt.getPartOfString(1) != "[" {
-			return nil, fmt.Errorf("getCompound: Incomplete compound")
-		}
-	} else if snbt.getPartOfString(1) != "{" {
+func (snbt *stringNBT) getCompound() (map[string]interface{}, error) {
+	if snbt.getPartOfString(1) != "{" {
 		return nil, fmt.Errorf("getCompound: Incomplete compound")
 	}
 	snbt.pointer++
@@ -447,12 +443,7 @@ func (snbt *stringNBT) getCompound(isParseBlockStates bool) (map[string]interfac
 		if err != nil {
 			return nil, fmt.Errorf("getCompound: Incomplete compound")
 		}
-		if isParseBlockStates {
-			if snbt.getPartOfString(1) == "]" {
-				snbt.pointer++
-				break
-			}
-		} else if snbt.getPartOfString(1) == "}" {
+		if snbt.getPartOfString(1) == "}" {
 			snbt.pointer++
 			break
 		}
@@ -473,9 +464,30 @@ func ParseStringNBT(SNBT string, IsParseBlockStates bool) (interface{}, error) {
 		return nil, fmt.Errorf("ParseStringNBT: Failed to parse the target string-nbt, and the error may occurred in >>>%v<<<; SNBT = %#v", reader.getPartOfString(10), SNBT)
 	}
 	// prepare
+	if IsParseBlockStates {
+		if reader.getPartOfString(1) == "[" {
+			reader.context = fmt.Sprintf("{%v", reader.context[1:])
+		} else {
+			return nil, fmt.Errorf("ParseStringNBT: Failed to parse the target string-nbt, and the error may occurred in >>>%v<<<; SNBT = %#v", reader.getPartOfString(10), SNBT)
+		}
+		for {
+			if reader.context[len(reader.context)-1:] == " " || reader.context[len(reader.context)-1:] == "\n" || reader.context[len(reader.context)-1:] == "\t" {
+				reader.context = reader.context[:len(reader.context)-1]
+			} else {
+				break
+			}
+		}
+		if reader.context[len(reader.context)-1:] == "]" {
+			reader.context = fmt.Sprintf("%v}", reader.context[:len(reader.context)-1])
+		} else {
+			reader.pointer = len(reader.context) - 5
+			return nil, fmt.Errorf("ParseStringNBT: Failed to parse the target string-nbt, and the error may occurred in >>>%v<<<; SNBT = %#v", reader.getPartOfString(10), SNBT)
+		}
+	}
+	// prepare to parse block states
 	switch reader.getPartOfString(1) {
 	case "{":
-		compound, err := reader.getCompound(IsParseBlockStates)
+		compound, err := reader.getCompound()
 		if err != nil {
 			reader.pointer = reader.pointer - 5
 			return nil, fmt.Errorf("ParseStringNBT: Failed to parse the target string-nbt, and the error may occurred in >>>%v<<<; SNBT = %#v", reader.getPartOfString(10), SNBT)
