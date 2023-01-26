@@ -84,7 +84,7 @@ func placeLectern(
 		return fmt.Errorf("placeLectern: %v", err)
 	}
 	// place lectern block
-	if len(LecternItemData) <= 0 && !blockNBT_depends.CheckVersion() {
+	if len(LecternItemData) <= 0 || !blockNBT_depends.CheckVersion() {
 		return nil
 	}
 	// if it is nothing in the lectern block or the current version are not support, then return nil

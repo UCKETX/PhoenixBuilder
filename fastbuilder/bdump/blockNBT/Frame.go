@@ -85,7 +85,7 @@ func placeFrame(
 		return fmt.Errorf("placeFrame: %v", err)
 	}
 	// place frame block
-	if len(FrameData.Item) <= 0 && !blockNBT_depends.CheckVersion() {
+	if len(FrameData.Item) <= 0 || !blockNBT_depends.CheckVersion() {
 		return nil
 	}
 	// if it is nothing in the frame block or the current version are not support, then return nil
