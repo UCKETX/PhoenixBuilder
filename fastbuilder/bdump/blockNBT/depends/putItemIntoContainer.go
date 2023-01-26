@@ -16,12 +16,10 @@ import (
 var containerOpenData interface{}
 var container_Hotbar_0_StackNetworkID int32
 
-type EnchItem struct {
-	WantPutItem   types.ChestSlot
+type PutItemList struct {
+	WantPutItem   types.ChestData
 	ContainerInfo *types.Module
 }
-
-type EnchItemList []EnchItem
 
 func openContainer(
 	Environment *environment.PBEnvironment,
@@ -178,25 +176,32 @@ func putItemIntoContainer(
 */
 func PutItemIntoContainerRun(
 	Environment *environment.PBEnvironment,
-	Input EnchItemList,
+	Input PutItemList,
 ) error {
-	err := ReplaceitemAndEnchant(Environment, &Input[0].WantPutItem)
+	err := ReplaceitemAndEnchant(Environment, &types.ChestSlot{Name: "air"})
 	if err != nil {
 		return fmt.Errorf("PutItemIntoContainerRun: %v", err)
 	}
-	err = openContainer(Environment, &Input[0].WantPutItem, Input[0].ContainerInfo.Block.Name, &Input[0].ContainerInfo.Block.BlockStates, [3]int32{int32(Input[0].ContainerInfo.Point.X), int32(Input[0].ContainerInfo.Point.Y), int32(Input[0].ContainerInfo.Point.Z)})
+	err = openContainer(Environment, &types.ChestSlot{Name: "air"}, Input.ContainerInfo.Block.Name, &Input.ContainerInfo.Block.BlockStates, [3]int32{int32(Input.ContainerInfo.Point.X), int32(Input.ContainerInfo.Point.Y), int32(Input.ContainerInfo.Point.Z)})
 	if err != nil {
 		return fmt.Errorf("PutItemIntoContainerRun: %v", err)
 	}
-	for key, value := range Input {
-		if key > 0 {
-			err := ReplaceitemAndEnchant(Environment, &value.WantPutItem)
+	containerID := ContainerIdIndexMap[*Input.ContainerInfo.Block.Name]
+	for _, value := range Input.WantPutItem {
+		if value.Name == "written_book" {
+			value.Name = "writable_book"
+		}
+		err := ReplaceitemAndEnchant(Environment, &value)
+		if err != nil {
+			return fmt.Errorf("PutItemIntoContainerRun: %v", err)
+		}
+		if value.Name == "writable_book" {
+			err = WriteTextToBook(Environment, &value)
 			if err != nil {
 				return fmt.Errorf("PutItemIntoContainerRun: %v", err)
 			}
 		}
-		containerID := ContainerIdIndexMap[*value.ContainerInfo.Block.Name]
-		err = putItemIntoContainer(Environment, &value.WantPutItem, byte(containerID))
+		err = putItemIntoContainer(Environment, &value, byte(containerID))
 		if err != nil {
 			return fmt.Errorf("PutItemIntoContainerRun: %v", err)
 		}

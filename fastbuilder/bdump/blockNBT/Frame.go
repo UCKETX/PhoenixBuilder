@@ -89,16 +89,28 @@ func placeFrame(
 		return nil
 	}
 	// if it is nothing in the frame block or the current version are not support, then return nil
+	var writtenBookMark bool
+	if FrameData.Item[0].Name == "written_book" {
+		FrameData.Item[0].Name = "writable_book"
+		writtenBookMark = true
+	}
 	err = blockNBT_depends.ReplaceitemAndEnchant(Environment, &types.ChestSlot{
-		Name:        FrameData.Item[0].Name,
-		Count:       FrameData.Item[0].Count,
-		Damage:      FrameData.Item[0].Damage,
-		ItemLock:    FrameData.Item[0].ItemLock,
-		KeepOnDeath: FrameData.Item[0].KeepOnDeath,
-		CanPlaceOn:  FrameData.Item[0].CanPlaceOn,
-		CanDestroy:  FrameData.Item[0].CanDestroy,
-		EnchList:    FrameData.Item[0].EnchList,
+		Name:       FrameData.Item[0].Name,
+		Count:      FrameData.Item[0].Count,
+		Damage:     FrameData.Item[0].Damage,
+		CanPlaceOn: FrameData.Item[0].CanPlaceOn,
+		CanDestroy: FrameData.Item[0].CanDestroy,
+		ItemNBT:    FrameData.Item[0].ItemNBT,
 	})
+	if err != nil {
+		return fmt.Errorf("placeFrame: %v", err)
+	}
+	if FrameData.Item[0].Name == "writable_book" {
+		err = blockNBT_depends.WriteTextToBook(Environment, &FrameData.Item[0])
+	}
+	if writtenBookMark {
+		FrameData.Item[0].Name = "written_book"
+	}
 	if err != nil {
 		return fmt.Errorf("placeFrame: %v", err)
 	}
@@ -109,7 +121,7 @@ func placeFrame(
 	}
 	BLOCKSTATES, normal := blockStates.(map[string]interface{})
 	if !normal {
-		return fmt.Errorf("placeFrame: Failed to converse BlockStates to map[string]interface{}, BlockStates = %#v\n", BlockInfo.Block.BlockStates)
+		return fmt.Errorf("placeFrame: Failed to converse BlockStates to map[string]interface{}, BlockStates = %#v", BlockInfo.Block.BlockStates)
 	}
 	_, ok := BLOCKSTATES["facing_direction"]
 	if !ok {

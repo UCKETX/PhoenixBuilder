@@ -3,7 +3,7 @@ package blockNBT_depends
 /*
 export from netease mc 2.5
 
-only items that can be activated by the replaceitem command are exported
+only items that can be activated by the replaceitem command are exported, expect written_book
 
 the item stack which netease exclusive are not supported
 
@@ -794,6 +794,7 @@ var ItemRunTimeID map[string]int = map[string]int{
 	"wooden_sword":                       308,
 	"wool":                               35,
 	"writable_book":                      512,
+	"written_book":                       513,
 	"yellow_candle":                      -417,
 	"yellow_dye":                         407,
 	"yellow_flower":                      37,

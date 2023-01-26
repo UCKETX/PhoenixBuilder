@@ -423,6 +423,18 @@ func (snbt *stringNBT) getCompound() (map[string]interface{}, error) {
 	snbt.pointer++
 	ans := map[string]interface{}{}
 	for {
+		err := snbt.jumpSpace()
+		if err != nil {
+			return map[string]interface{}{}, fmt.Errorf("getCompound: TAG_Compound")
+		}
+		if snbt.getPartOfString(1) == "}" {
+			snbt.pointer++
+			return ans, nil
+		} else if snbt.getPartOfString(1) == "," && len(ans) > 0 {
+			snbt.pointer++
+		} else if len(ans) > 0 {
+			return nil, fmt.Errorf("getCompound: Incomplete TAG_Compound")
+		}
 		key, err := snbt.getKey()
 		if err != nil {
 			return nil, fmt.Errorf("getCompound: Failed to get the key of value, and the error log is %v", err)
@@ -436,17 +448,7 @@ func (snbt *stringNBT) getCompound() (map[string]interface{}, error) {
 			return nil, fmt.Errorf("getCompound: Failed to get the value, and the error log is %v", err)
 		}
 		ans[key] = value
-		err = snbt.jumpSpace()
-		if err != nil {
-			return nil, fmt.Errorf("getCompound: Incomplete compound")
-		}
-		if snbt.getPartOfString(1) == "}" {
-			snbt.pointer++
-			break
-		}
-		snbt.pointer++
 	}
-	return ans, nil
 }
 
 func ParseStringNBT(SNBT string, IsParseBlockStates bool) (interface{}, error) {

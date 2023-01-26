@@ -18,6 +18,7 @@ func PacketProcessor(Environment *environment.PBEnvironment, NeedWaiting bool, R
 	// waiting for the packet
 	ans := []packet.Packet{}
 	for _, value := range ReceivePacket {
+		// fmt.Printf("%#v\n", value)
 		if value.ID() == RequestPacketId {
 			ans = append(ans, value)
 		}

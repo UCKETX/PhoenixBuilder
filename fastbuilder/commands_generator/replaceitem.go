@@ -18,6 +18,18 @@ func ReplaceItemRequest(module *types.Module, config *types.MainConfig) []string
 	}
 }
 
+func getItemLockOrKeepOnDeath(input map[string]interface{}, keyName string) uint8 {
+	_, ok := input[keyName]
+	if !ok {
+		return 255
+	}
+	got, normal := input[keyName].(byte)
+	if !normal {
+		return 255
+	}
+	return got
+}
+
 func GetReplaceItemEnhancement(module *types.Module, location int) string {
 	ans := make([]string, 0)
 	i := *module.ChestData
@@ -39,14 +51,15 @@ func GetReplaceItemEnhancement(module *types.Module, location int) string {
 		ans = append(ans, fmt.Sprintf(`"can_destroy": {"blocks": [%v]}`, strings.Join(single, ", ")))
 	}
 	// can_destroy
-	if value.ItemLock == 1 {
+	itemLock := getItemLockOrKeepOnDeath(value.ItemNBT, "minecraft:item_lock")
+	if itemLock == 1 {
 		ans = append(ans, `"item_lock": {"mode": "lock_in_slot"}`)
 	}
-	if value.ItemLock == 2 {
+	if itemLock == 2 {
 		ans = append(ans, `"item_lock": {"mode": "lock_in_inventory"}`)
 	}
 	// item_lock
-	if value.KeepOnDeath == 1 {
+	if getItemLockOrKeepOnDeath(value.ItemNBT, "minecraft:keep_on_death") == 1 {
 		ans = append(ans, `"keep_on_death": {}`)
 	}
 	// keep_on_death

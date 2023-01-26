@@ -91,11 +91,9 @@ func getContainerData(container interface{}) (types.ChestData, error) {
 		var itemData uint16 = 0
 		var name string = ""
 		var slot uint8 = 0
-		var enchList []interface{}
-		var item_lock uint8 = 0
-		var keep_on_death uint8 = 0
 		var can_place_on []string = []string{}
 		var can_destroy []string = []string{}
+		var itemNBT map[string]interface{}
 		// 初始化
 		containerData, normal := value.(map[string]interface{})
 		if !normal {
@@ -143,6 +141,7 @@ func getContainerData(container interface{}) (types.ChestData, error) {
 			if !normal {
 				return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"tag\"]; container[%v] = %#v", key, key, containerData)
 			}
+			itemNBT = tag
 			// 这个 container["tag"] 一定是一个复合标签
 			_, ok = tag["Damage"]
 			if ok {
@@ -153,31 +152,6 @@ func getContainerData(container interface{}) (types.ChestData, error) {
 				itemData = uint16(got)
 			}
 			// container["tag"]["Damage"]
-			_, ok = tag["minecraft:item_lock"]
-			if ok {
-				item_lock, normal = tag["minecraft:item_lock"].(byte)
-				if !normal {
-					return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"tag\"][\"minecraft:item_lock\"]; container[%v][\"tag\"] = %#v", key, key, tag)
-				}
-			}
-			// container["tag"]["minecraft:item_lock"]
-			// 此数据为 1 时使用 lock_in_slot ，为 2 时使用 lock_in_inventory
-			_, ok = tag["minecraft:keep_on_death"]
-			if ok {
-				keep_on_death, normal = tag["minecraft:keep_on_death"].(byte)
-				if !normal {
-					return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"tag\"][\"minecraft:keep_on_death\"]; container[%v][\"tag\"] = %#v", key, key, tag)
-				}
-			}
-			// container["tag"]["minecraft:keep_on_death"]
-			_, ok = tag["ench"]
-			if ok {
-				enchList, normal = tag["ench"].([]interface{})
-				if !normal {
-					return types.ChestData{}, fmt.Errorf("getContainerData: Crashed in container[%v][\"tag\"][\"ench\"]; container[%v][\"tag\"] = %#v", key, key, tag)
-				}
-			}
-			// // container["tag"]["ench"]
 		}
 		// 拿一下这个工具的耐久值（当然也可能是别的，甚至它都不是个工具）及其他一些数据
 		// 这个 tag 里的 Damage 实际上也不一定就是物品的数据值(附加值)
@@ -273,15 +247,13 @@ func getContainerData(container interface{}) (types.ChestData, error) {
 		// 物品组件 - can_destroy
 		// 此字段不一定存在
 		ans = append(ans, types.ChestSlot{
-			Name:        name,
-			Count:       count,
-			Damage:      itemData,
-			Slot:        slot,
-			ItemLock:    item_lock,
-			KeepOnDeath: keep_on_death,
-			CanPlaceOn:  can_place_on,
-			CanDestroy:  can_destroy,
-			EnchList:    enchList,
+			Name:       name,
+			Count:      count,
+			Damage:     itemData,
+			Slot:       slot,
+			CanPlaceOn: can_place_on,
+			CanDestroy: can_destroy,
+			ItemNBT:    itemNBT,
 		})
 		// 提交数据
 	}
@@ -337,24 +309,21 @@ func placeContainer(
 	}
 	// for old method
 	if BlockInfo.ChestData != nil {
-		enchItemList := blockNBT_depends.EnchItemList{}
+		putItemList := blockNBT_depends.PutItemList{ContainerInfo: BlockInfo}
 		for key, value := range got {
 			chestData := *BlockInfo.ChestData
 			_, ok := blockNBT_depends.ContainerIdIndexMap[*BlockInfo.Block.Name]
-			if len(chestData[key].EnchList) <= 0 || !ok || !blockNBT_depends.CheckVersion() {
+			if (!blockNBT_depends.CheskEnchItem(chestData[key].ItemNBT) && chestData[key].Name != "writable_book" && chestData[key].Name != "written_book") || !ok || !blockNBT_depends.CheckVersion() {
 				err := cmdsender.SendDimensionalCommand(value)
 				if err != nil {
 					return fmt.Errorf("placeContainer: %v", err)
 				}
 			} else {
-				enchItemList = append(enchItemList, blockNBT_depends.EnchItem{
-					WantPutItem:   chestData[key],
-					ContainerInfo: BlockInfo,
-				})
+				putItemList.WantPutItem = append(putItemList.WantPutItem, chestData[key])
 			}
 		}
-		if len(enchItemList) > 0 {
-			err := blockNBT_depends.PutItemIntoContainerRun(Environment, enchItemList)
+		if len(putItemList.WantPutItem) > 0 {
+			err := blockNBT_depends.PutItemIntoContainerRun(Environment, putItemList)
 			if err != nil {
 				return fmt.Errorf("placeContainer: %v", err)
 			}

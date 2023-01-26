@@ -18,6 +18,11 @@ type EnchSingle struct {
 	Level int16
 }
 
+func CheskEnchItem(input map[string]interface{}) bool {
+	_, ok := input["ench"]
+	return ok
+}
+
 func parseEnchList(Ench []interface{}) (EnchList, error) {
 	ans := make([]EnchSingle, 0)
 	for key, value := range Ench {
@@ -49,10 +54,10 @@ func parseEnchList(Ench []interface{}) (EnchList, error) {
 	return ans, nil
 }
 
-func EnchantRequest(Environment *environment.PBEnvironment, input []interface{}) error {
+func enchantRequest(Environment *environment.PBEnvironment, input []interface{}) error {
 	got, err := parseEnchList(input)
 	if err != nil {
-		return fmt.Errorf("EnchantRequest: %v", err)
+		return fmt.Errorf("enchantRequest: %v", err)
 	}
 	if len(got) <= 0 {
 		return nil
@@ -64,16 +69,17 @@ func EnchantRequest(Environment *environment.PBEnvironment, input []interface{})
 		}
 		err := sender.SendDimensionalCommand(fmt.Sprintf("enchant @s %v %v", value.Id, value.Level))
 		if err != nil {
-			return fmt.Errorf("EnchantRequest: %v", err)
+			return fmt.Errorf("enchantRequest: %v", err)
 		}
 	}
 	_, err = sender.SendWSCommandWithResponce(fmt.Sprintf("enchant @s %v %v", got[len(got)-1].Id, got[len(got)-1].Level))
 	if err != nil {
-		return fmt.Errorf("EnchantRequest: %v", err)
+		return fmt.Errorf("enchantRequest: %v", err)
 	}
 	return nil
 }
 
+// 物品始终会生成于 slot.hotbar 0
 func ReplaceitemAndEnchant(
 	Environment *environment.PBEnvironment,
 	ItemInfo *types.ChestSlot,
@@ -109,10 +115,9 @@ func ReplaceitemAndEnchant(
 		&types.Module{
 			ChestData: &types.ChestData{
 				types.ChestSlot{
-					ItemLock:    ItemInfo.ItemLock,
-					KeepOnDeath: ItemInfo.KeepOnDeath,
-					CanPlaceOn:  ItemInfo.CanPlaceOn,
-					CanDestroy:  ItemInfo.CanDestroy,
+					CanPlaceOn: ItemInfo.CanPlaceOn,
+					CanDestroy: ItemInfo.CanDestroy,
+					ItemNBT:    ItemInfo.ItemNBT,
 				},
 			},
 		}, 0)))
@@ -120,15 +125,21 @@ func ReplaceitemAndEnchant(
 		return fmt.Errorf("ReplaceitemAndEnchant: %v", err)
 	}
 	// replaceitem
-	err = EnchantRequest(Environment, ItemInfo.EnchList)
-	if err != nil {
-		return fmt.Errorf("ReplaceitemAndEnchant: %v", err)
+	_, isEnchItem := ItemInfo.ItemNBT["ench"]
+	if isEnchItem {
+		got, normal := ItemInfo.ItemNBT["ench"].([]interface{})
+		if normal {
+			err = enchantRequest(Environment, got)
+			if err != nil {
+				return fmt.Errorf("ReplaceitemAndEnchant: %v", err)
+			}
+		}
 	}
 	// enchant item stack
 	if CheckVersion() {
 		networkID, ok := ItemRunTimeID[ItemInfo.Name]
 		if ok {
-			if ItemInfo.EnchList != nil {
+			if isEnchItem {
 				Environment.Connection.(*minecraft.Conn).WritePacket(&packet.MobEquipment{
 					EntityRuntimeID: Environment.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
 					NewItem: protocol.ItemInstance{
@@ -141,7 +152,7 @@ func ReplaceitemAndEnchant(
 							BlockRuntimeID: 0,
 							Count:          1,
 							NBTData: map[string]interface{}{
-								"ench": ItemInfo.EnchList,
+								"ench": []interface{}{},
 							},
 							CanBePlacedOn: ItemInfo.CanPlaceOn,
 							CanBreak:      ItemInfo.CanDestroy,
