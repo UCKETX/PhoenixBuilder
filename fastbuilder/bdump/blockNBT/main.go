@@ -79,6 +79,17 @@ func placeBlockWithNBTData(input *input) (interface{}, error) {
 			return nil, fmt.Errorf("placeBlockWithNBTData: %v", err)
 		}
 		// 物品展示框
+	case "lectern":
+		err = Lectern(&LecternInput{
+			Environment:  input.Environment,
+			Mainsettings: input.Mainsettings,
+			BlockInfo:    input.BlockInfo,
+			LecternData:  input.BlockNBT,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("placeBlockWithNBTData: %v", err)
+		}
+		// 讲台
 	default:
 		request := commands_generator.SetBlockRequest(input.BlockInfo, input.Mainsettings)
 		cmdsender := input.Environment.CommandSender.(*commands.CommandSender)

@@ -15,7 +15,6 @@ var index = map[string]string{
 	"chest":              "Container",
 	"barrel":             "Container",
 	"trapped_chest":      "Container",
-	"lectern":            "Container",
 	"hopper":             "Container",
 	"dispenser":          "Container",
 	"dropper":            "Container",
@@ -70,6 +69,8 @@ var index = map[string]string{
 	"glow_frame": "Frame",
 	"frame":      "Frame",
 	// 物品展示框
+	"lectern": "lectern",
+	// 讲台
 }
 
 // 检查这个方块实体是否已被支持
