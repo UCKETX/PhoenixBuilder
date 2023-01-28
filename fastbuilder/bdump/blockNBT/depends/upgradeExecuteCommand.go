@@ -240,11 +240,11 @@ func (cmd *command) getSelector() (string, error) {
 			cmd.pointer = ans.end
 			return selector, nil
 		} else {
+			save := cmd.pointer
 			transit, err := cmd.getRightBarrier()
 			if err != nil {
 				return "", fmt.Errorf("getSelector: Incomplete selector parameter")
 			}
-			save := cmd.pointer
 			cmd.pointer = transit + 1
 			return fmt.Sprintf("%v%v", selector, cmd.context[save:transit+1]), nil
 		}
