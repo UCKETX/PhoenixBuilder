@@ -290,7 +290,7 @@ func (cmd *command) getPos() (string, error) {
 			return "", fmt.Errorf("getPos: incomplete parameter")
 		}
 		successStates := false
-		for _, value := range []string{"~", "^", "-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"} {
+		for _, value := range []string{"~", "^", "-", "+", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"} {
 			if cmd.getPartOfString(1) == value {
 				successStates = true
 			}
