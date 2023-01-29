@@ -179,7 +179,6 @@ func (cmd *command) getRightBarrier() (int, error) {
 	var barrier int = 0
 	var err1 error = nil
 	var err2 error = nil
-	var err error = nil
 	for {
 		quotationMark, err1 = cmd.index("\"")
 		barrier, err2 = cmd.index("]")
@@ -190,11 +189,16 @@ func (cmd *command) getRightBarrier() (int, error) {
 			return barrier, nil
 		} else if quotationMark < barrier {
 			cmd.pointer = quotationMark + 1
-			cmd.pointer, err = cmd.index("\"")
-			if err != nil {
-				return 0, fmt.Errorf("getRightBarrier: Unexpected '\"' occurred in %v", quotationMark)
+			for {
+				if cmd.getPartOfString(2) == "\\\"" {
+					cmd.pointer = cmd.pointer + 2
+				} else if cmd.getPartOfString(1) == "\"" {
+					cmd.pointer++
+					break
+				} else {
+					cmd.pointer++
+				}
 			}
-			cmd.pointer++
 		} else {
 			return barrier, nil
 		}
@@ -269,40 +273,33 @@ func (cmd *command) getSelector() (string, error) {
 }
 
 func (cmd *command) getPos() (string, error) {
-	err := cmd.jumpSpace()
-	if err != nil {
-		return "", fmt.Errorf("getPos: Incomplete parameter")
-	}
 	ans := []string{}
 	for i := 0; i < 3; i++ {
-		cmd.pointer++
-		transit, err := cmd.highSearching([]string{
-			" ", "^", "~",
-			"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n",
-			"o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-			"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
-			"O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-			"?",
-			"/",
-		})
-		cmd.pointer--
+		err := cmd.jumpSpace()
 		if err != nil {
-			return "", fmt.Errorf("getPos: incomplete parameter")
+			return "", fmt.Errorf("getPos: Incomplete parameter")
 		}
-		successStates := false
-		for _, value := range []string{"~", "^", "-", "+", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"} {
-			if cmd.getPartOfString(1) == value {
-				successStates = true
+		save := cmd.pointer
+		switch cmd.getPartOfString(1) {
+		case "~":
+			cmd.pointer++
+		case "^":
+			cmd.pointer++
+		}
+		for {
+			header := cmd.getPartOfString(1)
+			success := true
+			for _, value := range []string{"+", "-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."} {
+				if header == value {
+					success = false
+					break
+				}
 			}
-		}
-		if !successStates {
-			return "", fmt.Errorf("getPos: Invalid position")
-		}
-		ans = append(ans, cmd.context[cmd.pointer:transit.begin])
-		cmd.pointer = transit.begin
-		err = cmd.jumpSpace()
-		if err != nil {
-			return "", fmt.Errorf("getPos: Incomplete parameter occurred in %v", i)
+			if success {
+				ans = append(ans, cmd.context[save:cmd.pointer])
+				break
+			}
+			cmd.pointer++
 		}
 	}
 	for i, value := range ans {
