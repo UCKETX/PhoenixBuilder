@@ -335,7 +335,9 @@ func (cmd *command) getPos() (string, error) {
 				if value == "-0" {
 					value = "0"
 				}
-				ans[i] = value + ".0"
+				if !strings.Contains(value, ".") {
+					ans[i] = value + ".0"
+				}
 			} else {
 				j, err := strconv.ParseFloat(value, 32)
 				if err != nil {
