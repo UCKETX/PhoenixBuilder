@@ -4,7 +4,6 @@ type Module struct {
 	Block            *Block
 	CommandBlockData *CommandBlockData
 	NBTData          []byte
-	StringNBT        *string
 	//Entity *Entity
 	ChestSlot *ChestSlot
 	ChestData *ChestData

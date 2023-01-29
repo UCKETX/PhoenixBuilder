@@ -282,7 +282,7 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 				// SettingsCommand is unable to teleport the player.
 			}
 			blkscounter++
-			if curblock.StringNBT != nil {
+			if curblock.NBTData != nil {
 				err := blockNBT.PlaceBlockWithNBTDataRun(env, cfg, isFastMode, curblock)
 				if err != nil {
 					pterm.Warning.Printf("%v\n", err)

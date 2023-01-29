@@ -5,9 +5,9 @@ import (
 	blockNBT_depends "phoenixbuilder/fastbuilder/bdump/blockNBT/depends"
 	"phoenixbuilder/fastbuilder/commands_generator"
 	"phoenixbuilder/fastbuilder/environment"
-	"phoenixbuilder/fastbuilder/mcstructure"
 	"phoenixbuilder/fastbuilder/types"
 	"phoenixbuilder/io/commands"
+	"phoenixbuilder/minecraft/nbt"
 	"sync"
 )
 
@@ -112,13 +112,10 @@ func PlaceBlockWithNBTDataRun(
 	defer apiIsUsing.Unlock()
 	apiIsUsing.Lock()
 	// lock(or unlock) api
-	got, err := mcstructure.ParseStringNBT(*BlockInfo.StringNBT, false)
+	var BlockNBT map[string]interface{}
+	err := nbt.Unmarshal(BlockInfo.NBTData, &BlockNBT)
 	if err != nil {
 		return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%v,%v,%v), and the error log is %v", *BlockInfo.Block.Name, BlockInfo.Point.X, BlockInfo.Point.Y, BlockInfo.Point.Z, err)
-	}
-	BlockNBT, normal := got.(map[string]interface{})
-	if !normal {
-		return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%v,%v,%v), because of could not parse StringNBT; StringNBT = %#v", *BlockInfo.Block.Name, BlockInfo.Point.X, BlockInfo.Point.Y, BlockInfo.Point.Z, *BlockInfo.StringNBT)
 	}
 	// get interface nbt
 	TYPE := blockNBT_depends.CheckIfIsEffectiveNBTBlock(*BlockInfo.Block.Name)

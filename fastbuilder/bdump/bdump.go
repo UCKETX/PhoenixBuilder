@@ -282,7 +282,7 @@ func (bdump *BDump) writeBlocks(w io.Writer) error {
 			if err != nil {
 				return err
 			}
-		} else if mdl.StringNBT == nil {
+		} else if mdl.NBTData == nil {
 			if len(mdl.Block.BlockStates) == 0 {
 				err := writer.WriteCommand(&command.PlaceBlock{
 					BlockConstantStringID: uint16(blocksPalette[*mdl.Block.Name]),
@@ -304,7 +304,7 @@ func (bdump *BDump) writeBlocks(w io.Writer) error {
 			err := writer.WriteCommand(&command.PlaceBlockWithNBTData{
 				BlockConstantStringID:       uint16(blocksPalette[*mdl.Block.Name]),
 				BlockStatesConstantStringID: uint16(blocksPalette[mdl.Block.BlockStates]),
-				StringNBT:                   *mdl.StringNBT,
+				BlockNBT:                    mdl.NBTData,
 			})
 			if err != nil {
 				return err

@@ -45,7 +45,7 @@ type ContainerInput struct {
 }
 
 func Container(input *ContainerInput) error {
-	if input.BlockInfo.StringNBT != nil {
+	if input.BlockInfo.NBTData != nil {
 		containerdata, err := getContainerDataRun(*input.ContainerData, *input.BlockInfo.Block.Name)
 		if err != nil {
 			return fmt.Errorf("Container: Failed to place the entity block named %v at (%v,%v,%v), and the error log is %v", *input.BlockInfo.Block.Name, input.BlockInfo.Point.X, input.BlockInfo.Point.Y, input.BlockInfo.Point.Z, err)

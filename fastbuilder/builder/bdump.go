@@ -327,7 +327,7 @@ func BDump(config *types.MainConfig, blc chan *types.Module) error {
 					Name:        &blocksStrPool[int(cmd.BlockConstantStringID)],
 					BlockStates: blocksStrPool[int(cmd.BlockStatesConstantStringID)],
 				},
-				StringNBT: &cmd.StringNBT,
+				NBTData: cmd.BlockNBT,
 				Point: types.Position{
 					X: brushPosition[0] + config.Position.X,
 					Y: brushPosition[1] + config.Position.Y,

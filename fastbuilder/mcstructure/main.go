@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"phoenixbuilder/fastbuilder/types"
+	"phoenixbuilder/minecraft/nbt"
 	"strconv"
 	"strings"
 )
@@ -388,7 +389,7 @@ func DumpBlocks(
 				}
 				// 获得基本信息
 				var hasNBT bool = false
-				var string_nbt string = ""
+				var blockNBT []byte
 				var err error = fmt.Errorf("DumpBlocks: Initialization error")
 				// 变量初始化
 				// 危险！变量初始化这里不要动，不然可能会出现一些意想不到的 Bug
@@ -433,7 +434,7 @@ func DumpBlocks(
 						}
 						// 对于箱子和陷阱箱的附加处理是为了解决箱子间的连接问题，让所有的箱子都不再连接；不知道有没有人愿意解决这个问题呢？
 						hasNBT = true
-						string_nbt, err = Compound(block_entity_data, false)
+						blockNBT, err = nbt.Marshal(block_entity_data)
 						if err != nil {
 							return []*types.Module{}, fmt.Errorf("DumpBlocks: %v", err)
 						}
@@ -470,7 +471,7 @@ func DumpBlocks(
 					}
 					// 简单地初始化一下一个单个的元素
 					if hasNBT {
-						single.StringNBT = &string_nbt
+						single.NBTData = blockNBT
 						single.Block.Data = uint16(foreground_blockData) // use for container
 					}
 					single.Block.BlockStates = foreground_blockStates
