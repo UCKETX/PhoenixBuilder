@@ -253,14 +253,19 @@ func (cmd *command) getSelector() (string, error) {
 			return fmt.Sprintf("%v%v", selector, cmd.context[save:transit+1]), nil
 		}
 	} else if cmd.getPartOfString(1) == "\"" {
+		save := cmd.pointer
 		cmd.pointer++
-		transit, err := cmd.index("\"")
-		if err != nil {
-			return "", fmt.Errorf("getSelector: Unexpected '\"'")
+		for {
+			if cmd.getPartOfString(2) == "\\\"" {
+				cmd.pointer = cmd.pointer + 2
+			} else if cmd.getPartOfString(1) == "\"" {
+				cmd.pointer++
+				break
+			} else {
+				cmd.pointer++
+			}
 		}
-		save := cmd.pointer - 1
-		cmd.pointer = transit + 1
-		return cmd.context[save : transit+1], nil
+		return cmd.context[save:cmd.pointer], nil
 	} else {
 		transit, err := cmd.highSearching([]string{" ", "^", "~"})
 		if err != nil {
