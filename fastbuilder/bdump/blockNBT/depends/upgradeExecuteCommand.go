@@ -190,6 +190,9 @@ func (cmd *command) getRightBarrier() (int, error) {
 		} else if quotationMark < barrier {
 			cmd.pointer = quotationMark + 1
 			for {
+				if cmd.pointer > len(cmd.context)-1 {
+					return 0, fmt.Errorf("getRightBarrier: Right barrier not found")
+				}
 				if cmd.getPartOfString(2) == "\\\"" {
 					cmd.pointer = cmd.pointer + 2
 				} else if cmd.getPartOfString(1) == "\"" {
@@ -256,6 +259,9 @@ func (cmd *command) getSelector() (string, error) {
 		save := cmd.pointer
 		cmd.pointer++
 		for {
+			if cmd.pointer > len(cmd.context)-1 {
+				return "", fmt.Errorf("getSelector: Incomplete selector")
+			}
 			if cmd.getPartOfString(2) == "\\\"" {
 				cmd.pointer = cmd.pointer + 2
 			} else if cmd.getPartOfString(1) == "\"" {
@@ -292,6 +298,9 @@ func (cmd *command) getPos() (string, error) {
 			cmd.pointer++
 		}
 		for {
+			if cmd.pointer > len(cmd.context)-1 {
+				return "", fmt.Errorf("getPos: EOF not found")
+			}
 			header := cmd.getPartOfString(1)
 			success := true
 			for _, value := range []string{"+", "-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."} {
