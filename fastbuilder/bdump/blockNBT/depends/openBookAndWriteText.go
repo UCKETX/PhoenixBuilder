@@ -111,6 +111,7 @@ func signBook(env *environment.PBEnvironment, bookData bookData) {
 	}
 }
 
+// 总是打开 slot.horbar 0 处的书并写入文字，然后签名
 func WriteTextToBook(Environment *environment.PBEnvironment, ItemData *types.ChestSlot) error {
 	if CheckVersion() {
 		bookRunTimeId := int32(ItemRunTimeID["writable_book"])
