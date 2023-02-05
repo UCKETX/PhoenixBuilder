@@ -344,6 +344,7 @@ func (cmd *command) getPos() (string, error) {
 				if value == "-0" {
 					value = "0"
 				}
+				ans[i] = value
 				if !strings.Contains(value, ".") {
 					ans[i] = value + ".0"
 				}
