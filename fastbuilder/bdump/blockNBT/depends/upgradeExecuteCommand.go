@@ -320,11 +320,11 @@ func (cmd *command) getPos() (string, error) {
 		if value[0] == "^"[0] || value[0] == "~"[0] {
 			value = value[1:]
 			if value != "" {
-				j, err := strconv.ParseFloat(value, 32)
+				j, err := strconv.ParseFloat(value, 64)
 				if err != nil {
 					return "", fmt.Errorf("getPos: Invalid position occurred in %v", ans[i])
 				}
-				value = strconv.FormatFloat(j, 'f', -1, 32)
+				value = strconv.FormatFloat(j, 'f', -1, 64)
 				if value == "0" || value == "-0" {
 					value = ""
 				}
@@ -336,24 +336,25 @@ func (cmd *command) getPos() (string, error) {
 			}
 		} else {
 			if strings.Contains(value, ".") {
-				j, err := strconv.ParseFloat(value, 32)
+				j, err := strconv.ParseFloat(value, 64)
 				if err != nil {
 					return "", fmt.Errorf("getPos: Invalid position occurred in %v", ans[i])
 				}
-				value = strconv.FormatFloat(j, 'f', -1, 32)
+				value = strconv.FormatFloat(j, 'f', -1, 64)
 				if value == "-0" {
 					value = "0"
 				}
-				ans[i] = value
 				if !strings.Contains(value, ".") {
 					ans[i] = value + ".0"
+				} else {
+					ans[i] = value
 				}
 			} else {
-				j, err := strconv.ParseFloat(value, 32)
+				j, err := strconv.ParseFloat(value, 64)
 				if err != nil {
 					return "", fmt.Errorf("getPos: Invalid position occurred in %v", ans[i])
 				}
-				value = strconv.FormatFloat(j, 'f', -1, 32)
+				value = strconv.FormatFloat(j, 'f', -1, 64)
 				if value == "-0" {
 					value = "0"
 				}
