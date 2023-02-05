@@ -310,7 +310,11 @@ func (cmd *command) getPos() (string, error) {
 				}
 			}
 			if success {
-				ans = append(ans, cmd.context[save:cmd.pointer])
+				appendPos := cmd.context[save:cmd.pointer]
+				if len(cmd.context[save:cmd.pointer]) <= 0 {
+					appendPos = " "
+				}
+				ans = append(ans, appendPos)
 				break
 			}
 			cmd.pointer++
