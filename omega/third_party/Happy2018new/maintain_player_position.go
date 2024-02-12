@@ -72,7 +72,9 @@ func (o *MaintainPlayerPosition) ReceiveResponse() error {
 				}
 				o.lock.Unlock()
 				o.signal.SendSignal()
+				// 更新子结果
 			}
+			// 设点该玩家的坐标及朝向数据
 		}
 		// 更新玩家坐标和朝向信息
 		select {

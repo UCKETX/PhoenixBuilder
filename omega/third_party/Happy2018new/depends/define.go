@@ -1,5 +1,7 @@
 package Happy2018new_depends
 
+// ------------------------- player position -------------------------
+
 // 描述玩家的游戏名称
 type PlayerName string
 
