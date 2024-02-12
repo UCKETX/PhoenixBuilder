@@ -15,6 +15,7 @@ var DefaultComponentConfigByte []byte
 
 // 插件列表
 var Components = map[string]defines.Component{
+	"全局玩家坐标维护":       &MaintainPlayerPosition{BasicComponent: &defines.BasicComponent{}},
 	"记录方块改动日志":       &RecordBlockChanges{BasicComponent: &defines.BasicComponent{}},
 	"记录坐标改动日志":       &RecordPlayerPosition{BasicComponent: &defines.BasicComponent{}},
 	"修改物品名称":         &ChangeItemNameByUseAnvil{BasicComponent: &defines.BasicComponent{}},

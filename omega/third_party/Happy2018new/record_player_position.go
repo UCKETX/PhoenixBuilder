@@ -8,46 +8,41 @@ import (
 	"fmt"
 	DB "phoenixbuilder/fastbuilder/database"
 	GameInterface "phoenixbuilder/game_control/game_interface"
-	ResourcesControl "phoenixbuilder/game_control/resources_control"
 	"phoenixbuilder/omega/defines"
-	"strconv"
+	Happy2018new_depends "phoenixbuilder/omega/third_party/Happy2018new/depends"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pterm/pterm"
 )
 
 type RecordPlayerPosition struct {
 	*defines.BasicComponent
 	apis           GameInterface.GameInterface
-	Database       *DB.Database
-	LogPassingChan chan SingleLog
-	Stoped         chan struct{}
-	WaitToStop     sync.WaitGroup
-	DatabaseName   string  `json:"数据库名称"`
-	CheckTime      int     `json:"检查周期(单位:游戏刻)"`
-	OutputToCMD    bool    `json:"是否在控制台实时打印坐标变动记录"`
-	RefreshTime    int     `json:"日志最小更新周期(单位:游戏刻)"`
-	MinRadius      float32 `json:"单个日志容许的最大活动半径"`
-}
-
-// 描述单个日志下单个玩家的坐标信息
-type PosInfo struct {
-	Dimension byte       // 玩家所处的维度
-	Position  [3]float32 // 玩家的位置
-	YRot      float32    // 玩家的偏航角
+	database       *DB.Database
+	logPassingChan chan SingleLog
+	stoped         chan struct{}
+	waitToStop     sync.WaitGroup
+	remote         struct {
+		table  Happy2018new_depends.PlayersPosInfo
+		lock   *sync.RWMutex
+		signal <-chan struct{}
+	}
+	DatabaseName string  `json:"数据库名称"`
+	OutputToCMD  bool    `json:"是否在控制台实时打印坐标变动记录"`
+	RefreshTime  int     `json:"日志最小更新周期(单位:游戏刻)"`
+	MinRadius    float32 `json:"单个日志容许的最大活动半径"`
 }
 
 // 描述单个日志
 type SingleLog struct {
-	Time       time.Time // 日志捕获时间
-	PlayerName string    // 该玩家的游戏名称
-	Pos        PosInfo   // 该玩家的坐标信息
+	Time       time.Time                    // 日志捕获时间
+	PlayerName string                       // 该玩家的游戏名称
+	Pos        Happy2018new_depends.PosInfo // 该玩家的坐标信息
 }
 
 // 将 pos_info 编码为二进制形式
-func (o *RecordPlayerPosition) Marshal(pos_info PosInfo) (
+func (o *RecordPlayerPosition) Marshal(pos_info Happy2018new_depends.PosInfo) (
 	result []byte,
 	err error,
 ) {
@@ -77,7 +72,7 @@ func (o *RecordPlayerPosition) Marshal(pos_info PosInfo) (
 
 // 将 pos_info 从二进制形式解码
 func (o *RecordPlayerPosition) Unmarshal(pos_info []byte) (
-	result PosInfo,
+	result Happy2018new_depends.PosInfo,
 	err error,
 ) {
 	reader := bytes.NewBuffer(pos_info)
@@ -150,14 +145,14 @@ func (o *RecordPlayerPosition) CreateAndGetBucket(log *SingleLog) (
 		buffer := bytes.NewBuffer([]byte{})
 		binary.Write(buffer, binary.LittleEndian, datetime.Unix())
 		// 获取时间戳的二进制形式
-		if !o.Database.HasBucket(buffer.Bytes()) {
-			if err = o.Database.CreateBucket(buffer.Bytes()); err != nil {
+		if !o.database.HasBucket(buffer.Bytes()) {
+			if err = o.database.CreateBucket(buffer.Bytes()); err != nil {
 				err = fmt.Errorf("CreateAndGetBucket: %v", err)
 				return
 			}
 		}
 		// 创建根存储桶，若其未被创建的话
-		root = o.Database.GetBucketByName(buffer.Bytes())
+		root = o.database.GetBucketByName(buffer.Bytes())
 		if root == nil {
 			err = fmt.Errorf(
 				"CreateAndGetBucket: The resulting bucket of root named %s is nil",
@@ -257,7 +252,7 @@ func (o *RecordPlayerPosition) RecordSingleLog(
 	err error,
 ) {
 	var sum_counts uint64
-	var last_pos_info PosInfo
+	var last_pos_info Happy2018new_depends.PosInfo
 	// 初始化
 	player, details, index, root_bucket_release_func, err := o.CreateAndGetBucket(&log)
 	if err != nil {
@@ -372,61 +367,6 @@ func (o *RecordPlayerPosition) RecordSingleLog(
 	// 返回值
 }
 
-// 以 o.CheckTime 的周期请求坐标及朝向信息，
-// 并在解析和处理后发送至管道 o.LogPassingChan 中。
-// 只会在遭遇错误时返回值
-func (o *RecordPlayerPosition) ReceiveResponse() error {
-	ticker := time.NewTicker(time.Second / 20 * time.Duration(o.CheckTime))
-	defer ticker.Stop()
-	// 初始化
-	for {
-		resp := o.apis.SendWSCommandWithResponse(
-			"querytarget @a",
-			ResourcesControl.CommandRequestOptions{
-				TimeOut: time.Second * 5,
-			},
-		)
-		if resp.Error != nil && resp.ErrorType == ResourcesControl.ErrCommandRequestTimeOut {
-			<-ticker.C
-			continue
-		}
-		result, err := o.apis.ParseTargetQueryingInfo(resp.Respond)
-		if err != nil {
-			return fmt.Errorf("ReceiveResponse: %v", err)
-		}
-		// 请求并解析租赁符返回的玩家坐标及朝向信息
-		for _, value := range result {
-			player_uuid, err := uuid.Parse(value.UniqueId)
-			if err != nil {
-				return fmt.Errorf("ReceiveResponse: %v", err)
-			}
-			temp, _ := strconv.ParseFloat(
-				strconv.FormatFloat(float64(value.Position[2]), 'f', 5, 32),
-				32,
-			)
-			value.Position[2] = float32(temp) - 1.62001
-			o.LogPassingChan <- SingleLog{
-				Time: time.Now(),
-				PlayerName: o.Frame.GetGameControl().GetPlayerKitByUUID(
-					player_uuid).GetRelatedUQ().Username,
-				Pos: PosInfo{
-					Dimension: value.Dimension,
-					Position:  value.Position,
-					YRot:      value.YRot,
-				},
-			}
-		}
-		// 向管道发送日志信息
-		select {
-		case <-ticker.C:
-		case <-o.Stoped:
-			o.Stoped <- struct{}{}
-			return nil
-		}
-		// 等待下一次检测
-	}
-}
-
 func (o *RecordPlayerPosition) Init(
 	settings *defines.ComponentConfig,
 	storage defines.StorageAndLogProvider,
@@ -439,15 +379,15 @@ func (o *RecordPlayerPosition) Init(
 	if o.DatabaseName == "" {
 		o.DatabaseName = "PlayerLocation.db"
 	}
-	o.LogPassingChan = make(chan SingleLog, 64)
-	o.Stoped = make(chan struct{}, 1)
+	o.logPassingChan = make(chan SingleLog, 64)
+	o.stoped = make(chan struct{}, 1)
 }
 
 func (o *RecordPlayerPosition) Inject(frame defines.MainFrame) {
 	var err error
 	o.Frame = frame
 	o.apis = o.Frame.GetGameControl().GetInteraction()
-	o.Database, err = DB.OpenOrCreateDatabase(o.Frame.GetRelativeFileName(o.DatabaseName))
+	o.database, err = DB.OpenOrCreateDatabase(o.Frame.GetRelativeFileName(o.DatabaseName))
 	if err != nil {
 		panic(err)
 	}
@@ -457,15 +397,40 @@ func (o *RecordPlayerPosition) Activate() {
 	var should_refresh bool
 	var modified bool
 	var err error
-	o.WaitToStop.Add(3)
+	o.waitToStop.Add(3)
+	{
+		table, lock, regist, has := Happy2018new_depends.GetPlayerPositionContext(o.Frame)
+		if !has {
+			panic("RecordPlayerPosition: 前置组件 全局玩家坐标维护 未启用")
+		}
+		o.remote = struct {
+			table  Happy2018new_depends.PlayersPosInfo
+			lock   *sync.RWMutex
+			signal <-chan struct{}
+		}{
+			table:  table,
+			lock:   lock,
+			signal: regist(),
+		}
+	}
 	go func() {
 		for {
-			err := o.ReceiveResponse()
-			if err == nil {
-				o.WaitToStop.Add(-1)
+			select {
+			case <-o.remote.signal:
+				o.remote.lock.RLock()
+				for key, value := range o.remote.table {
+					o.logPassingChan <- SingleLog{
+						Time:       time.Now(),
+						PlayerName: string(key),
+						Pos:        value,
+					}
+				}
+				o.remote.lock.RUnlock()
+			case <-o.stoped:
+				o.stoped <- struct{}{}
+				o.waitToStop.Done()
 				return
 			}
-			pterm.Error.Printf("RecordPlayerPosition: %v\n", err)
 		}
 	}()
 	go func() {
@@ -475,9 +440,9 @@ func (o *RecordPlayerPosition) Activate() {
 			should_refresh = true
 			select {
 			case <-ticker.C:
-			case <-o.Stoped:
-				o.Stoped <- struct{}{}
-				o.WaitToStop.Add(-1)
+			case <-o.stoped:
+				o.stoped <- struct{}{}
+				o.waitToStop.Done()
 				return
 			}
 		}
@@ -486,10 +451,10 @@ func (o *RecordPlayerPosition) Activate() {
 		for {
 			var log SingleLog
 			select {
-			case log = <-o.LogPassingChan:
-			case <-o.Stoped:
-				o.Stoped <- struct{}{}
-				o.WaitToStop.Add(-1)
+			case log = <-o.logPassingChan:
+			case <-o.stoped:
+				o.stoped <- struct{}{}
+				o.waitToStop.Done()
 				return
 			}
 			if should_refresh {
@@ -510,9 +475,9 @@ func (o *RecordPlayerPosition) Activate() {
 
 func (o *RecordPlayerPosition) Stop() error {
 	fmt.Println("正在保存 " + o.DatabaseName)
-	o.Stoped <- struct{}{}
-	o.WaitToStop.Wait()
-	err := o.Database.CloseDatabase()
+	o.stoped <- struct{}{}
+	o.waitToStop.Wait()
+	err := o.database.CloseDatabase()
 	if err == nil {
 		fmt.Printf("%v 已保存完毕\n", o.DatabaseName)
 	}
