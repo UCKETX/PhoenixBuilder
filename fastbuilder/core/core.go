@@ -503,12 +503,12 @@ func WaitMCPCheckChallengesDown(
 		if err != nil {
 			panic(fmt.Sprintf("WaitMCPCheckChallengesDown: %v", err))
 		}
-		if len(command_output) > 0 {
-			<-command_output
+		select {
+		case <-command_output:
 			close(command_output)
-			break
+			return
+		case <-ticker.C:
 		}
-		<-ticker.C
 	}
 }
 
@@ -526,24 +526,24 @@ func SolveMCPCheckChallenges(env *environment.PBEnvironment) {
 			}
 			// challenge timeout
 			pk, data, err := env.Connection.(*minecraft.Conn).ReadPacketAndBytes()
-			if err != nil {
+			if !challengeTimeout && err != nil {
 				panic(fmt.Sprintf("SolveMCPCheckChallenges: %v", err))
 			}
 			// read packet
-			// cache the current packet
 			switch p := pk.(type) {
 			case *packet.PyRpc:
+				older_states := env.GetCheckNumEverPassed
 				onPyRpc(p, env)
+				if !older_states && env.GetCheckNumEverPassed {
+					challengeSolved <- struct{}{}
+				}
 			case *packet.CommandOutput:
 				commandOutput <- *p
 				return
 			default:
 				cachedPkt <- CachedPacket{pk, data}
 			}
-			if len(challengeSolved) == 0 && env.GetCheckNumEverPassed {
-				challengeSolved <- struct{}{}
-			}
-			// process the current packet
+			// for each incoming packet
 		}
 	}()
 	// read packet and process
