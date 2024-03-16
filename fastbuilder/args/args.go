@@ -10,6 +10,7 @@ extern char args_var_fbversion_struct;
 extern char args_var_fbplainversion_struct;
 extern char args_fb_commit_struct;
 extern char args_isDebugMode;
+extern char args_skipMCPCheckChallenges;
 extern char newAuthServer;
 extern char enable_omega_system;
 extern char args_disableVersionChecking;
@@ -34,6 +35,7 @@ func referenceHolder() {
 	print(C.args_var_fbplainversion_struct)
 	print(C.args_fb_commit_struct)
 	print(C.args_isDebugMode)
+	print(C.args_skipMCPCheckChallenges)
 	print(C.newAuthServer)
 	print(C.enable_omega_system)
 	print(C.args_disableVersionChecking)
@@ -51,6 +53,7 @@ var FBVersion string = *(*string)(unsafe.Pointer(&__cgo_args_var_fbversion_struc
 var FBPlainVersion string = *(*string)(unsafe.Pointer(&__cgo_args_var_fbplainversion_struct))
 var FBCommitHash string = *(*string)(unsafe.Pointer(&__cgo_args_fb_commit_struct))
 var DebugMode bool = *(*bool)(unsafe.Pointer(&__cgo_args_isDebugMode))
+var SkipMCPCheckChallenges bool = *(*bool)(unsafe.Pointer(&__cgo_args_skipMCPCheckChallenges))
 var AuthServer string = *(*string)(unsafe.Pointer(&__cgo_newAuthServer))
 var ShouldEnableOmegaSystem = *(*bool)(unsafe.Pointer(&__cgo_enable_omega_system))
 var ShouldDisableVersionChecking = *(*bool)(unsafe.Pointer(&__cgo_args_disableVersionChecking))
@@ -66,10 +69,10 @@ func SpecifiedToken() bool
 
 var CustomTokenContent = *(*string)(unsafe.Pointer(&__cgo_token_content))
 
-var ExternalListenAddress = *(*string)(unsafe.Pointer(&__cgo_externalListenAddr))
 var NoReadline = *(*bool)(unsafe.Pointer(&__cgo_args_no_readline))
 var CustomGameName = *(*string)(unsafe.Pointer(&__cgo_custom_gamename))
 var InGameResponse = *(*bool)(unsafe.Pointer(&__cgo_ingame_response))
+var ExternalListenAddress = *(*string)(unsafe.Pointer(&__cgo_externalListenAddr))
 
 //export go_rmdir_recursive
 func go_rmdir_recursive(path *C.char) {
