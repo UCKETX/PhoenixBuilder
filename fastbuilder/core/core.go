@@ -436,13 +436,7 @@ func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 	}
 
 	env.Connection = conn
-	if args.SkipMCPCheckChallenges {
-		env.CachedPacket = (<-chan packet.Packet)(make(chan packet.Packet))
-		pterm.Warning.Println("Login to the rental server without passing the MCPCheckChallenges!")
-		pterm.Info.Println("Gamerule `sendcommandfeedback` will be updated to false(if we can) in order to reduce screen brushing.")
-	} else {
-		SolveMCPCheckChallenges(env)
-	}
+	SolveMCPCheckChallenges(env)
 	pterm.Println(pterm.Yellow(I18n.T(I18n.ConnectionEstablished)))
 
 	env.UQHolder = uqHolder.NewUQHolder(conn.GameData().EntityRuntimeID)
@@ -485,6 +479,11 @@ func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 }
 
 func SolveMCPCheckChallenges(env *environment.PBEnvironment) {
+	if args.SkipMCPCheckChallenges {
+		env.CachedPacket = (<-chan packet.Packet)(make(chan packet.Packet))
+		return
+	}
+	// check
 	challengeTimeout := false
 	challengeSolved := make(chan struct{}, 1)
 	cachedPkt := make(chan CachedPacket, 32767)
