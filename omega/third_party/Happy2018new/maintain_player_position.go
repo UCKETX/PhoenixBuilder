@@ -40,7 +40,7 @@ func (o *MaintainPlayerPosition) ReceiveResponse() error {
 			<-ticker.C
 			continue
 		}
-		result, err := o.apis.ParseTargetQueryingInfo(resp.Respond)
+		result, err := o.apis.ParseTargetQueryingInfo(*resp.Respond)
 		if err != nil {
 			return fmt.Errorf("ReceiveResponse: %v", err)
 		}

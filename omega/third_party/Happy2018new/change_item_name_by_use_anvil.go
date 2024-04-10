@@ -244,7 +244,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) {
 	if cmdResp.Error != nil {
 		panic(pterm.Error.Sprintf("修改物品名称: %v", cmdResp.Error))
 	}
-	parseAns, err := o.apis.ParseTargetQueryingInfo(cmdResp.Respond)
+	parseAns, err := o.apis.ParseTargetQueryingInfo(*cmdResp.Respond)
 	if err != nil {
 		panic(pterm.Error.Sprintf("修改物品名称: %v", err))
 	}

@@ -121,7 +121,7 @@ func (o *PickBlock) onInvoke(chat *defines.GameChat) bool {
 		if resp.Error != nil {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c无法 §fPick 目标的方块")
 		}
-		querytargetInfo, err := o.apis.ParseTargetQueryingInfo(resp.Respond)
+		querytargetInfo, err := o.apis.ParseTargetQueryingInfo(*resp.Respond)
 		if err != nil {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c无法 §fPick 目标的方块")
 		}
