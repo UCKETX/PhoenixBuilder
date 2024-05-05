@@ -3,12 +3,12 @@ package Mapping
 import (
 	"encoding/hex"
 	"fmt"
-	"phoenixbuilder/fastbuilder/sync_map"
+	"phoenixbuilder/fastbuilder/generics"
 )
 
 // 初始化或重置 map
 func (m *Mapping) Reset() {
-	m.contents = sync_map.Map[HexString, struct{}]{}
+	m.contents = generics.SyncMap[HexString, struct{}]{}
 }
 
 // 将 key 放入 map 中
