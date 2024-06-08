@@ -323,7 +323,7 @@ func (cq *QGroupLink) onNewQQMessage(msg IMessage) {
 	}
 	groupMsg := msg.(GroupMessage)
 	gid := groupMsg.GroupID
-	msgText := groupMsg.Message
+	msgText := groupMsg.RawMessage
 	if cq.FilterQQToServerMsgByHead != "" && !strings.HasPrefix(msgText, "/") {
 		if !strings.HasPrefix(msgText, cq.FilterQQToServerMsgByHead) {
 			return
