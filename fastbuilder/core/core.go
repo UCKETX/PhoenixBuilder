@@ -347,14 +347,17 @@ func InitializeMinecraftConnection(ctx context.Context, authenticator minecraft.
 	})
 	runtimeid := fmt.Sprintf("%d", conn.GameData().EntityUniqueID)
 	conn.WritePacket(&packet.PyRpc{
-		Value: py_rpc.Marshal(&py_rpc.SyncUsingMod{}),
+		Value:         py_rpc.Marshal(&py_rpc.SyncUsingMod{}),
+		OperationType: packet.PyRpcOperationTypeSend,
 	})
 	conn.WritePacket(&packet.PyRpc{
-		Value: py_rpc.Marshal(&py_rpc.SyncVipSkinUUID{nil}),
+		Value:         py_rpc.Marshal(&py_rpc.SyncVipSkinUUID{nil}),
+		OperationType: packet.PyRpcOperationTypeSend,
 	})
 	if !args.SkipMCPCheckChallenges {
 		conn.WritePacket(&packet.PyRpc{
-			Value: py_rpc.Marshal(&py_rpc.ClientLoadAddonsFinishedFromGac{}),
+			Value:         py_rpc.Marshal(&py_rpc.ClientLoadAddonsFinishedFromGac{}),
+			OperationType: packet.PyRpcOperationTypeSend,
 		})
 	}
 	{
@@ -366,10 +369,12 @@ func InitializeMinecraftConnection(ctx context.Context, authenticator minecraft.
 				Package: &park,
 				Type:    py_rpc.ModEventClientToServer,
 			}),
+			OperationType: packet.PyRpcOperationTypeSend,
 		})
 	}
 	conn.WritePacket(&packet.PyRpc{
-		Value: py_rpc.Marshal(&py_rpc.ArenaGamePlayerFinishLoad{}),
+		Value:         py_rpc.Marshal(&py_rpc.ArenaGamePlayerFinishLoad{}),
+		OperationType: packet.PyRpcOperationTypeSend,
 	})
 	{
 		event := cts_mc_v.PlayerUiInit{RuntimeID: runtimeid}
@@ -380,6 +385,7 @@ func InitializeMinecraftConnection(ctx context.Context, authenticator minecraft.
 				Package: &park,
 				Type:    py_rpc.ModEventClientToServer,
 			}),
+			OperationType: packet.PyRpcOperationTypeSend,
 		})
 	}
 	return
@@ -576,7 +582,10 @@ func onPyRpc(p *packet.PyRpc, env *environment.PBEnvironment) {
 	switch c := content.(type) {
 	case *py_rpc.HeartBeat:
 		c.Type = py_rpc.ClientToServerHeartBeat
-		conn.WritePacket(&packet.PyRpc{Value: py_rpc.Marshal(c)})
+		conn.WritePacket(&packet.PyRpc{
+			Value:         py_rpc.Marshal(c),
+			OperationType: packet.PyRpcOperationTypeSend,
+		})
 		// heart beat to test the device is still alive?
 		// it seems that we just need to return it back to the server is OK
 	case *py_rpc.StartType:
@@ -587,7 +596,10 @@ func onPyRpc(p *packet.PyRpc, env *environment.PBEnvironment) {
 		client := env.FBAuthClient.(*fbauth.Client)
 		c.Content = client.TransferData(c.Content)
 		c.Type = py_rpc.StartTypeResponse
-		conn.WritePacket(&packet.PyRpc{Value: py_rpc.Marshal(c)})
+		conn.WritePacket(&packet.PyRpc{
+			Value:         py_rpc.Marshal(c),
+			OperationType: packet.PyRpcOperationTypeSend,
+		})
 		// get data and send packet
 	case *py_rpc.GetMCPCheckNum:
 		if args.SkipMCPCheckChallenges || env.GetCheckNumEverPassed {
@@ -614,7 +626,8 @@ func onPyRpc(p *packet.PyRpc, env *environment.PBEnvironment) {
 		}
 		// unmarshal response and adjust the data included
 		conn.WritePacket(&packet.PyRpc{
-			Value: py_rpc.Marshal(&py_rpc.SetMCPCheckNum{ret_p}),
+			Value:         py_rpc.Marshal(&py_rpc.SetMCPCheckNum{ret_p}),
+			OperationType: packet.PyRpcOperationTypeSend,
 		})
 		env.GetCheckNumEverPassed = true
 		// send packet and mark this challenges was finished
