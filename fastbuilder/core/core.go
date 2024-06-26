@@ -222,6 +222,9 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 			pk, data = c.Packet, c.Data
 		} else {
 			if pk, data, err = conn.ReadPacketAndBytes(); err != nil {
+				if len(breaker) > 0 {
+					return
+				}
 				panic(err)
 			}
 			if args.ShouldEnableOmegaSystem && !env.OmegaHasBootstrap {
