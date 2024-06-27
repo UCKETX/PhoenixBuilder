@@ -145,7 +145,7 @@ func main() {
 	fmt.Println(allRequiredChunks)
 	fmt.Println(structureName)
 
-	chunks, err := AcquireData(hopPath, allRequiredChunks)
+	_, err = AcquireData(hopPath, allRequiredChunks)
 	if err != nil {
 		panic(err)
 	}
@@ -159,10 +159,13 @@ func main() {
 	// if err != nil {
 	// 	panic(err)
 	// }
-	err = structure.EncodeSchem(chunks, startPos, endPos, structureName, overallCacheDir)
-	if err != nil {
-		panic(err)
-	}
+
+	/*
+		err = structure.EncodeSchem(chunks, startPos, endPos, structureName, overallCacheDir)
+		if err != nil {
+			panic(err)
+		}
+	*/
 
 	fp, err := os.OpenFile("/Users/dai/projects/PhoenixBuilder/omega/utils/structure/dump_test/omega_export_cache/test_with_block_entities/test_with_block_entities.schem", os.O_RDONLY, 0755)
 	if err != nil {

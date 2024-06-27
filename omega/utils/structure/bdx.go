@@ -10,6 +10,7 @@ import (
 	"phoenixbuilder/fastbuilder/types"
 	"phoenixbuilder/fastbuilder/world_provider"
 	"phoenixbuilder/minecraft/protocol/packet"
+	"phoenixbuilder/mirror/blocks"
 	"phoenixbuilder/mirror/chunk"
 	"phoenixbuilder/mirror/define"
 
@@ -285,7 +286,7 @@ func handleBDXCMD(br io.Reader, infoSender func(string)) (author string, blockCh
 				case packet.CommandBlockChain:
 					blockName = "chain_command_block"
 				}
-				rtid, _ := chunk.LegacyBlockToRuntimeID(blockName, 0)
+				rtid, _ := blocks.LegacyBlockToRuntimeID(blockName, 0)
 				commandBlockNbt := map[string]interface{}{
 					"id":                 "CommandBlock",
 					"Command":            string(command),
@@ -415,7 +416,7 @@ func handleBDXCMD(br io.Reader, infoSender func(string)) (author string, blockCh
 				case packet.CommandBlockChain:
 					blockName = "chain_command_block"
 				}
-				rtid, _ := chunk.LegacyBlockToRuntimeID(blockName, blockData)
+				rtid, _ := blocks.LegacyBlockToRuntimeID(blockName, blockData)
 				commandBlockNbt := map[string]interface{}{
 					"id":                 "CommandBlock",
 					"Command":            string(command),
@@ -475,7 +476,7 @@ func handleBDXCMD(br io.Reader, infoSender func(string)) (author string, blockCh
 				runtimeIdPoolUsing = NewRuntimeIDConvertor()
 				runtimeIdPoolUsing.ConvertFN = func(u uint32) uint32 {
 					blk := pool[u].Take()
-					if rtid, found := chunk.LegacyBlockToRuntimeID(*blk.Name, blk.Data); found {
+					if rtid, found := blocks.LegacyBlockToRuntimeID(*blk.Name, blk.Data); found {
 						return rtid
 					} else {
 						return chunk.AirRID

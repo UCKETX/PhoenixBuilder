@@ -3,7 +3,7 @@ package structure
 import (
 	"fmt"
 	"phoenixbuilder/mirror"
-	"phoenixbuilder/mirror/chunk"
+	"phoenixbuilder/mirror/blocks"
 	"phoenixbuilder/mirror/define"
 	"phoenixbuilder/omega/defines"
 	"phoenixbuilder/omega/utils"
@@ -140,13 +140,13 @@ func (o *Builder) Build(blocksIn chan *IOBlockForBuilder, speed int, boostSleepT
 				fallBackActionsMu.Unlock()
 			}
 		}
-		blk, found := chunk.RuntimeIDToLegacyBlock(block.RTID)
+		blockName, blockData, found := blocks.RuntimeIDToLegacyBlock(block.RTID)
 		if !found {
 			continue
 		}
 		o.ProgressUpdater(counter)
 		if block.Expand16 {
-			cmd := fmt.Sprintf("fill %v %v %v %v %v %v %v %v", block.Pos[0], block.Pos[1], block.Pos[2], block.Pos[0]+15, block.Pos[1]+15, block.Pos[2]+15, strings.Replace(blk.Name, "minecraft:", "", 1), blk.Val)
+			cmd := fmt.Sprintf("fill %v %v %v %v %v %v %v %v", block.Pos[0], block.Pos[1], block.Pos[2], block.Pos[0]+15, block.Pos[1]+15, block.Pos[2]+15, strings.Replace(blockName, "minecraft:", "", 1), blockData)
 			// fmt.Println("fast fill")
 			o.NormalCmdSender(cmd)
 			counter += 4096
@@ -159,19 +159,19 @@ func (o *Builder) Build(blocksIn chan *IOBlockForBuilder, speed int, boostSleepT
 				// deferSendBlock(block)
 				placeStart := time.Now()
 				quickDone := false
-				if cfg, err := utils.GenCommandBlockUpdateFromNbt(block.Pos, blk.Name, block.NBT); err == nil {
+				if cfg, err := utils.GenCommandBlockUpdateFromNbt(block.Pos, blockName, block.NBT); err == nil {
 					fallBackActionsMu.Lock()
 					fallBackActions[block.Pos] = func() {
 						pterm.Warning.Printfln("命令方块放置超时 @ %v time out!", block.Pos)
-						pterm.Warning.Printfln("重新尝试放置命令方块: 坐标: %v 名称: %v %v 信息: %v", block.Pos, blk.Name, blk.Val, block.NBT)
-						o.Ctrl.PlaceCommandBlock(block.Pos, blk.Name, int(blk.Val), false, true, cfg, func(done bool) {
+						pterm.Warning.Printfln("重新尝试放置命令方块: 坐标: %v 名称: %v %v 信息: %v", block.Pos, blockName, blockData, block.NBT)
+						o.Ctrl.PlaceCommandBlock(block.Pos, blockName, int(blockData), false, true, cfg, func(done bool) {
 							if !done {
-								pterm.Error.Printfln("命令方块放置失败: 坐标: %v 名称: %v %v 信息: %v", block.Pos, blk.Name, blk.Val, block.NBT)
+								pterm.Error.Printfln("命令方块放置失败: 坐标: %v 名称: %v %v 信息: %v", block.Pos, blockName, blockData, block.NBT)
 							}
 						}, time.Second*3)
 					}
 					fallBackActionsMu.Unlock()
-					o.Ctrl.PlaceCommandBlock(block.Pos, blk.Name, int(blk.Val), false, true, cfg, func(done bool) {
+					o.Ctrl.PlaceCommandBlock(block.Pos, blockName, int(blockData), false, true, cfg, func(done bool) {
 						if done {
 							quickDone = true
 							fallBackActionsMu.Lock()
@@ -192,7 +192,7 @@ func (o *Builder) Build(blocksIn chan *IOBlockForBuilder, speed int, boostSleepT
 				}
 
 			} else {
-				cmd := fmt.Sprintf("setblock %v %v %v %v %v", block.Pos[0], block.Pos[1], block.Pos[2], strings.Replace(blk.Name, "minecraft:", "", 1), blk.Val)
+				cmd := fmt.Sprintf("setblock %v %v %v %v %v", block.Pos[0], block.Pos[1], block.Pos[2], strings.Replace(blockName, "minecraft:", "", 1), blockData)
 				o.BlockCmdSender(cmd)
 			}
 			counter++

@@ -1,5 +1,10 @@
 package structure
 
+/*
+Deprecated this because we don't have block runtime id to Java block table.
+
+
+
 import (
 	"bytes"
 	"compress/gzip"
@@ -330,3 +335,4 @@ func DecodeSchem(data []byte, infoSender func(string)) (blockFeeder chan *IOBloc
 		stop = true
 	}, (width / 16) + 2, blocksCounter, nil
 }
+*/

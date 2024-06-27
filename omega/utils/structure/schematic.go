@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	Blocks "phoenixbuilder/mirror/blocks"
 	"phoenixbuilder/mirror/chunk"
 	"phoenixbuilder/mirror/define"
 
@@ -91,12 +92,9 @@ func DecodeSchematic(data []byte, infoSender func(string)) (blockFeeder chan *IO
 						return
 					}
 					index = x + z*width + y*length*width
-					if rtid, found := chunk.SchematicBlockToRuntimeID(blocks[index], values[index]); !found {
-						continue
-					} else {
-						if rtid != airRID {
-							blockChan <- &IOBlockForDecoder{Pos: define.CubePos{x, y, z}, RTID: rtid}
-						}
+					rtid := Blocks.SchematicToRuntimeID(blocks[index], values[index])
+					if rtid != airRID {
+						blockChan <- &IOBlockForDecoder{Pos: define.CubePos{x, y, z}, RTID: rtid}
 					}
 				}
 			}

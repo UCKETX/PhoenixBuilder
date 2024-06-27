@@ -1,6 +1,7 @@
 package structure
 
 import (
+	"phoenixbuilder/mirror/blocks"
 	"phoenixbuilder/mirror/chunk"
 	"strings"
 )
@@ -40,12 +41,12 @@ func (o *DoubleValueLegacyBlockToRuntimeIDMapper) GetRTID(blockPaletteID uint16,
 		// pterm.Info.Println("Air")
 		return chunk.AirRID
 	}
-	if rtid, found := chunk.LegacyBlockToRuntimeID(blockName, data); found {
+	if rtid, found := blocks.LegacyBlockToRuntimeID(blockName, data); found {
 		// pterm.Info.Println("Put", rtid)
 		o.quickCache[quickCacheID] = rtid
 		return rtid
 	} else {
-		if rtid, found := chunk.LegacyBlockToRuntimeID(blockName, 0); found {
+		if rtid, found := blocks.LegacyBlockToRuntimeID(blockName, 0); found {
 			o.quickCache[quickCacheID] = rtid
 			return rtid
 		}

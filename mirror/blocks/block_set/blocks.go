@@ -45,3 +45,7 @@ func (bs *BlockSet) AddBlock(b *describe.Block) {
 	}
 	bs.blocks = append(bs.blocks, b)
 }
+
+func (bs *BlockSet) ListAllBlockSets() []*describe.Block {
+	return bs.blocks
+}

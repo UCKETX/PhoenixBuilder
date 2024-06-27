@@ -67,7 +67,7 @@ func GenCommandBlockUpdateFromNbt(pos define.CubePos, blockName string, nbt map[
 		Command:            cmd,
 		LastOutput:         lo,
 		Name:               cusname,
-		TickDelay:          tickdelay,
+		TickDelay:          uint32(tickdelay),
 		ExecuteOnFirstTick: exeftb,
 		ShouldTrackOutput:  tob,
 	}, nil

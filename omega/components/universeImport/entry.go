@@ -18,7 +18,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/disintegration/imaging"
 	"github.com/pterm/pterm"
 )
 
@@ -78,14 +77,16 @@ func (o *Importor) Activate() {
 
 func (o *UniverseImport) getFrontEnd(fileName string, data []byte, infoSender func(s string)) (blockFeeder chan *structure.IOBlockForDecoder, stopFn func(), suggestMinCacheChunks int, totalBlocks int, err error) {
 	suggestMinCacheChunks = 0
-	trySchem := func() bool {
-		if blockFeeder, stopFn, suggestMinCacheChunks, totalBlocks, err = structure.DecodeSchem(data, infoSender); err == nil {
-			return true
-		} else {
-			pterm.Warning.Printfln("文件无法被 schem 解析器解析，将尝试下一个解析器 (%v)", err)
-			return false
+	/*
+		trySchem := func() bool {
+			if blockFeeder, stopFn, suggestMinCacheChunks, totalBlocks, err = structure.DecodeSchem(data, infoSender); err == nil {
+				return true
+			} else {
+				pterm.Warning.Printfln("文件无法被 schem 解析器解析，将尝试下一个解析器 (%v)", err)
+				return false
+			}
 		}
-	}
+	*/
 	trySchematic := func() bool {
 		if blockFeeder, stopFn, suggestMinCacheChunks, totalBlocks, err = structure.DecodeSchematic(data, infoSender); err == nil {
 			return true
@@ -98,13 +99,17 @@ func (o *UniverseImport) getFrontEnd(fileName string, data []byte, infoSender fu
 		if trySchematic() {
 			return
 		}
-		if trySchem() {
-			return
-		}
+		/*
+			if trySchem() {
+				return
+			}
+		*/
 	} else {
-		if trySchem() {
-			return
-		}
+		/*
+			if trySchem() {
+				return
+			}
+		*/
 		if trySchematic() {
 			return
 		}
@@ -356,47 +361,49 @@ func (o *UniverseImport) onImport(cmds []string) (stop bool) {
 	} else {
 		start[2] = i
 	}
-	fp, err := os.OpenFile(filePath, os.O_RDONLY, 0755)
-	if err != nil {
-		pterm.Error.Println("文件 %v 无法打开，具体问题为: %v", filePath, err)
-	} else {
-		defer fp.Close()
-		img, err := imaging.Decode(fp)
+	/*
+		fp, err := os.OpenFile(filePath, os.O_RDONLY, 0755)
 		if err != nil {
-			o.data.QueuedTasks = append(o.data.QueuedTasks, &universeImportTask{
-				Path:     filePath,
-				Offset:   start,
-				Progress: 0,
-			})
+			pterm.Error.Println("文件 %v 无法打开，具体问题为: %v", filePath, err)
 		} else {
-			// is an image
-			go func() {
-				dir := o.Frame.GetOmegaNormalCacheDir("image_import", path.Base(filePath))
-				os.MkdirAll(dir, 0755)
-				staructureFile, err := PreProcessImage(img, dir, cmds[4:])
-				if err != nil {
-					pterm.Error.Println(err)
-				} else {
-					suggestX := int(math.Round(float64(start.X())/64.)) * 64
-					suggestZ := int(math.Round(float64(start.Z())/64)) * 64
-					if (suggestX/64)%2 == 0 {
-						suggestX += 64
+			defer fp.Close()
+			img, err := imaging.Decode(fp)
+			if err != nil {
+				o.data.QueuedTasks = append(o.data.QueuedTasks, &universeImportTask{
+					Path:     filePath,
+					Offset:   start,
+					Progress: 0,
+				})
+			} else {
+				// is an image
+				go func() {
+					dir := o.Frame.GetOmegaNormalCacheDir("image_import", path.Base(filePath))
+					os.MkdirAll(dir, 0755)
+					staructureFile, err := PreProcessImage(img, dir, cmds[4:])
+					if err != nil {
+						pterm.Error.Println(err)
+					} else {
+						suggestX := int(math.Round(float64(start.X())/64.)) * 64
+						suggestZ := int(math.Round(float64(start.Z())/64)) * 64
+						if (suggestX/64)%2 == 0 {
+							suggestX += 64
+						}
+						if (suggestZ/64)%2 == 0 {
+							suggestZ += 64
+						}
+						if suggestX != start.X() || suggestZ != start.Z() {
+							pterm.Warning.Printfln("对于地图画，建议将导入点设为 %v %v %v", suggestX, start.Y(), suggestZ)
+						}
+						o.data.QueuedTasks = append(o.data.QueuedTasks, &universeImportTask{
+							Path:     staructureFile,
+							Offset:   start,
+							Progress: 0,
+						})
 					}
-					if (suggestZ/64)%2 == 0 {
-						suggestZ += 64
-					}
-					if suggestX != start.X() || suggestZ != start.Z() {
-						pterm.Warning.Printfln("对于地图画，建议将导入点设为 %v %v %v", suggestX, start.Y(), suggestZ)
-					}
-					o.data.QueuedTasks = append(o.data.QueuedTasks, &universeImportTask{
-						Path:     staructureFile,
-						Offset:   start,
-						Progress: 0,
-					})
-				}
-			}()
+				}()
+			}
 		}
-	}
+	*/
 	return true
 }
 

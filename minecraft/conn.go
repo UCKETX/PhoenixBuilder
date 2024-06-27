@@ -431,14 +431,20 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 
 // PhoenixBuilder specific func.
 // Author: CMA2401PT
-func (conn *Conn) ReadPacketAndBytes() (packets []packet.Packet, data []byte, err error) {
+func (conn *Conn) ReadPacketAndBytes() (packet packet.Packet, data []byte, err error) {
 	if data, ok := conn.takeDeferredPacket(); ok {
-		packets, err := data.decode(conn)
+		pk, err := data.decode(conn)
 		if err != nil {
 			conn.log.Println(err)
 			return conn.ReadPacketAndBytes()
 		}
-		return packets, data.full, nil
+		if len(pk) == 0 {
+			return conn.ReadPacketAndBytes()
+		}
+		for _, additional := range pk[1:] {
+			conn.additional <- additional
+		}
+		return pk[0], data.full, nil
 	}
 
 	select {
@@ -447,12 +453,18 @@ func (conn *Conn) ReadPacketAndBytes() (packets []packet.Packet, data []byte, er
 	case <-conn.readDeadline:
 		return nil, nil, conn.wrap(context.DeadlineExceeded, "read packet")
 	case data := <-conn.packets:
-		packets, err := data.decode(conn)
+		pk, err := data.decode(conn)
 		if err != nil {
 			conn.log.Println(err)
 			return conn.ReadPacketAndBytes()
 		}
-		return packets, data.full, nil
+		if len(pk) == 0 {
+			return conn.ReadPacketAndBytes()
+		}
+		for _, additional := range pk[1:] {
+			conn.additional <- additional
+		}
+		return pk[0], data.full, nil
 	}
 }
 

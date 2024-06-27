@@ -1,5 +1,10 @@
 package universe_import
 
+/*
+Deprecated this because we don't have block runtime id to Java block table.
+
+
+
 import (
 	"bytes"
 	"compress/gzip"
@@ -317,3 +322,4 @@ func PreProcessImage(img image.Image, dir string, cmds []string) (structureFile 
 	}
 	return schemImageDir, nil
 }
+*/
