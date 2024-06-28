@@ -105,7 +105,7 @@
               "价格": 100,
               "商品显示名": "猫",
               "给予模版": [
-                "execute [player] ~~~ summon cat ~~~",
+                "execute as [player] at @s run summon cat ~~~",
                 "/tellraw [player] {\"rawtext\":[{\"text\":\"2401PT: @[player], 要善待小猫喔\"}]}"
               ]
             },
@@ -114,7 +114,7 @@
               "价格": 100,
               "商品显示名": "苦力怕",
               "给予模版": [
-                "execute [player] ~~~ summon creeper ~~~",
+                "execute as [player] at @s run summon creeper ~~~",
                 "/tellraw @a {\"rawtext\":[{\"text\":\"2401PT: wow, 你还好吗[player]?\"}]}"
               ]
             }
@@ -147,26 +147,26 @@
       "授权文件": {
         "*": {
           "give": [
-            "execute [player] ~~~ give @s stone 64"
+            "execute as [player] at @s run give @s stone 64"
           ],
           "kill": [
             "kill [player]"
           ],
           "tp": [
             "tell [player] 实际指令为: tp @s [args]",
-            "execute [player] ~~~ tp @s [args]"
+            "execute as [player] at @s run tp @s [args]"
           ]
         },
         "2401PT": {
           "give": [
             "tell [player] actionbar 激活伪 give 指令，但是限制为只能给自己东西",
             "tell [player] 实际指令为: give @s [args]",
-            "execute [player] ~~~ give @s [args]"
+            "execute as [player] at @s run give @s [args]"
           ],
           "tp": [
             "tell [player] actionbar 激活伪完整 tp 指令，注意和第15行的区别",
             "tell [player] 实际指令为: tp [args]",
-            "execute [player] ~~~ tp [args]"
+            "execute as [player] at @s run tp [args]"
           ]
         }
       }
@@ -812,7 +812,7 @@
       "动作": [
         {
           "备注": "Omega 系统暂时还没做好移动记录，这个可以暂时替代一下",
-          "指令": "execute @a ~~~ tp @s ~~~",
+          "指令": "execute as @a at @s run tp @s ~~~",
           "结果记录": "完整结果",
           "身份": "Player"
         },
@@ -855,7 +855,7 @@
       ],
       "设置失败时的提示": "§4§l重生点设置失败,冒险模式下不可设置重生点",
       "设置成功时的提示": "§6§l重生点已成功设置",
-      "设置方式": "execute @a[name=[player],m=!a] ~~~ spawnpoint @s ~~~"
+      "设置方式": "execute as @a[name=[player],m=!a] at @s run spawnpoint @s ~~~"
     }
   },
   {
@@ -1004,7 +1004,7 @@
       "寄出成功时提示": "[package] 将在 [player] 上线时给他",
       "登录时延迟发送": 15,
       "提示玩家把要投递的东西丢到身边": "把要寄出的物品丢在身边3格内，完成后在聊天栏输入物品名",
-      "物品转移器": "execute [player] ~~~ tp @e[type=item,r=3] 10000 240 10000",
+      "物品转移器": "execute as [player] at @s run tp @e[type=item,r=3] 10000 240 10000",
       "记录文件": "快递.json",
       "打包平台": [
         10000,
@@ -1024,7 +1024,7 @@
       "刷新过快的反制": [
         {
           "备注": "记录附件玩家位置",
-          "指令": "execute @a[x=[x],y=[y],z=[z],r=128] ~~~ tp @s ~~~",
+          "指令": "execute as @a[x=[x],y=[y],z=[z],r=128] at @s run tp @s ~~~",
           "结果记录": "完整结果",
           "身份": "Player"
         },
@@ -1477,7 +1477,7 @@
         145,
         0
       ],
-      "物品转移器": "execute [player] ~~~ tp @e[type=item,r=3] 0 145 0",
+      "物品转移器": "execute as [player] at @s run tp @e[type=item,r=3] 0 145 0",
       "所得税": 0.3,
       "放入玩家商店时的指令": [
         "/tellraw [player] {\"rawtext\":[{\"text\":\"§6你的物品 [商品] 将被放入玩家商店\"}]}",

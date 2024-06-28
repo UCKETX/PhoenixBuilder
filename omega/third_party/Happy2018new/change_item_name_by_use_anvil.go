@@ -259,7 +259,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) {
 	}
 	// 取得请求者当前的坐标
 	err = o.apis.SendSettingsCommand(
-		fmt.Sprintf(`execute @a[name=%#v] ~ ~ ~ tp @a[name=%#v] %d %d %d`, chat.Name, o.apis.ClientInfo.DisplayName, pos[0], pos[1], pos[2]),
+		fmt.Sprintf(`execute as @a[name=%#v] at @s run tp @a[name=%#v] %d %d %d`, chat.Name, o.apis.ClientInfo.DisplayName, pos[0], pos[1], pos[2]),
 		false,
 	)
 	if err != nil {
@@ -313,7 +313,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) {
 	}
 	// 读取新物品的数据
 	err = o.apis.SendSettingsCommand(
-		fmt.Sprintf(`execute @a[name=%#v] ~ ~ ~ tp @a[name=%#v] %d %d %d`, chat.Name, o.apis.ClientInfo.DisplayName, pos[0], pos[1], pos[2]),
+		fmt.Sprintf(`execute as @a[name=%#v] at @s run tp @a[name=%#v] %d %d %d`, chat.Name, o.apis.ClientInfo.DisplayName, pos[0], pos[1], pos[2]),
 		false,
 	)
 	if err != nil {
